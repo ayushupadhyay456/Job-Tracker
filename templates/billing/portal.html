@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="portal-container">
+    <div class="portal-card">
+        <h2 class="portal-title">Subscription Settings</h2>
+        <p class="portal-sub">Manage your account and billing details.</p>
+
+        <div class="status-grid">
+            <div class="status-item">
+                <span class="label">Current Plan</span>
+                <span class="value">{{ current_user.plan.capitalize() }} Plan</span>
+            </div>
+            <div class="status-item">
+                <span class="label">Status</span>
+                <span class="value status-{{ current_user.subscription_status }}">
+                    {{ current_user.subscription_status.capitalize() if current_user.subscription_status else 'Inactive' }}
+                </span>
+            </div>
+        </div>
+
+        {# Plan management options removed intentionally #}
+    </div>
+</div>
+
+<style>
+    .portal-container { max-width: 600px; margin: 60px auto; padding: 0 20px; }
+    .portal-card { background: white; padding: 40px; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .portal-title { font-size: 24px; font-weight: 600; color: #111827; margin-bottom: 8px; }
+    .portal-sub { color: #6b7280; margin-bottom: 32px; font-size: 14px; }
+    
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 40px; padding-bottom: 40px; border-bottom: 1px solid #f3f4f6; }
+    .label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 4px; }
+    .value { font-size: 16px; font-weight: 500; color: #374151; }
+    
+    .status-active { color: #059669; background: #ecfdf5; padding: 4px 12px; border-radius: 9999px; font-size: 13px; }
+    
+    .portal-actions { display: flex; align-items: center; justify-content: space-between; }
+    .btn-danger-text { background: none; border: none; color: #dc2626; font-size: 14px; cursor: pointer; text-decoration: underline; }
+    .btn-danger-text:hover { color: #b91c1c; }
+</style>
+
+{% endblock %}

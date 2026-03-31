@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get Started · PathHire</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #0e0d0b;
+      --accent:    #d95215;
+      --accent-l:  rgba(217,82,21,0.10);
+      --accent-m:  rgba(217,82,21,0.22);
+      --surface:   #ffffff;
+      --bg:        #f7f5f2;
+      --fg:        #1c1a17;
+      --fg2:       #6b6560;
+      --fg3:       #a8a09a;
+      --line:      rgba(0,0,0,0.09);
+      --green:     #1a8a50;
+      --green-bg:  rgba(26,138,80,0.08);
+      --green-bdr: rgba(26,138,80,0.22);
+      --r:         14px;
+      --rs:        9px;
+      --sidebar-w: 340px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Shell ─── */
+    .shell {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      min-height: 100vh;
+    }
+
+    /* ─── Sidebar ─── */
+    .sidebar {
+      background: #111009;
+      padding: 40px 32px 40px;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* mesh glow */
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: -100px; left: -60px;
+      width: 380px; height: 380px;
+      background: radial-gradient(ellipse at 30% 30%, rgba(217,82,21,0.20) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .sidebar::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; right: -80px;
+      width: 260px; height: 260px;
+      background: radial-gradient(ellipse, rgba(217,82,21,0.09) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Brand */
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 56px;
+      position: relative; z-index: 1;
+      text-decoration: none;
+    }
+    .brand-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--accent);
+      display: grid; place-items: center;
+      box-shadow: 0 4px 12px rgba(217,82,21,0.35);
+    }
+    .brand-icon svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    .brand-name { font-size: 16px; font-weight: 600; letter-spacing: -0.025em; }
+    .brand-path { color: #e8e2d9; }
+    .brand-hire { color: var(--accent); }
+
+    /* Sidebar headline */
+    .sb-head { position: relative; z-index: 1; margin-bottom: 40px; }
+    .sb-head h2 {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 26px; font-weight: 400;
+      color: #f0ece4;
+      line-height: 1.28;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    .sb-head p { font-size: 13px; color: #5a5450; line-height: 1.7; }
+
+    /* Divider */
+    .sb-divider {
+      height: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.07) 0%, transparent 100%);
+      margin-bottom: 32px;
+      position: relative; z-index: 1;
+    }
+
+    /* Feature list */
+    .feat-list { list-style: none; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
+    .feat-list li {
+      display: flex; align-items: flex-start; gap: 11px;
+      font-size: 12.5px; color: #6a6360; line-height: 1.5;
+    }
+    .feat-dot {
+      width: 20px; height: 20px; flex-shrink: 0; margin-top: 0px;
+      border-radius: 50%;
+      background: rgba(217,82,21,0.12);
+      border: 1px solid rgba(217,82,21,0.28);
+      display: grid; place-items: center;
+    }
+    .feat-dot svg { width: 9px; height: 9px; stroke: var(--accent); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Step progress at bottom */
+    .sb-footer { margin-top: auto; position: relative; z-index: 1; }
+    .sb-track { display: flex; gap: 5px; margin-bottom: 10px; }
+    .sb-seg {
+      flex: 1; height: 3px; border-radius: 3px;
+      background: rgba(255,255,255,0.07);
+      transition: background 0.4s ease;
+    }
+    .sb-seg.done   { background: var(--accent); }
+    .sb-seg.active { background: rgba(217,82,21,0.45); }
+    .sb-step-label { font-size: 11px; color: #3e3a36; letter-spacing: 0.05em; }
+    .sb-step-label b { color: var(--accent); }
+
+    /* ─── Main ─── */
+    .main {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 60px 64px;
+      min-height: 100vh;
+    }
+    .step-wrap { width: 100%; max-width: 480px; }
+
+    /* ─── Stepper ─── */
+    .stepper {
+      display: flex; align-items: center;
+      gap: 0; margin-bottom: 52px;
+    }
+    .step-node {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 10.5px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: #c0b8b0;
+      transition: color 0.25s;
+    }
+    .step-node.active { color: var(--accent); }
+    .step-node.done   { color: var(--green); }
+    .step-ball {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center;
+      font-size: 11px; font-weight: 700;
+      background: var(--bg); color: #c0b8b0;
+      border: 1.5px solid var(--line);
+      transition: all 0.25s;
+    }
+    .step-node.active .step-ball {
+      background: var(--accent); color: #fff; border-color: var(--accent);
+      box-shadow: 0 0 0 5px rgba(217,82,21,0.13);
+    }
+    .step-node.done .step-ball {
+      background: var(--green); color: #fff; border-color: var(--green);
+    }
+    .step-name { display: none; }
+    @media(min-width: 520px) { .step-name { display: inline; } }
+    .step-connector { flex: 1; height: 1.5px; background: var(--line); margin: 0 10px; border-radius: 2px; transition: background 0.3s; }
+    .step-connector.done { background: var(--green); }
+
+    /* ─── Steps ─── */
+    .step { display: none; flex-direction: column; animation: fadeUp 0.28s cubic-bezier(0.23,1,0.32,1) both; }
+    .step.active { display: flex; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    .step-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .step-eyebrow::before {
+      content: '';
+      display: block;
+      width: 16px; height: 1.5px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    .step-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 30px; font-weight: 400;
+      color: var(--ink);
+      margin-bottom: 10px;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+    .step-sub {
+      font-size: 13.5px; color: var(--fg2);
+      margin-bottom: 36px; line-height: 1.7;
+      max-width: 400px;
+    }
+
+    /* ─── Form ─── */
+    .field { margin-bottom: 22px; }
+    .field-label {
+      display: block; font-size: 10.5px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--fg2); margin-bottom: 8px;
+    }
+    .field-input {
+      width: 100%; padding: 12px 15px;
+      border: 1.5px solid var(--line); border-radius: var(--rs);
+      font-size: 14px; font-family: 'DM Sans', sans-serif;
+      color: var(--ink); background: var(--surface);
+      outline: none; transition: border-color 0.18s, box-shadow 0.18s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .field-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(217,82,21,0.09);
+    }
+    .field-input::placeholder { color: #cec6bc; }
+
+    /* Seniority label */
+    .section-label {
+      font-size: 10.5px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--fg2); margin-bottom: 10px; display: block;
+    }
+
+    /* Radio cards */
+    .radio-grid { display: flex; flex-direction: column; gap: 9px; margin-bottom: 32px; }
+    .radio-card {
+      display: flex; align-items: center; gap: 14px;
+      padding: 13px 16px;
+      border: 1.5px solid var(--line);
+      border-radius: var(--rs);
+      cursor: pointer;
+      background: var(--surface);
+      transition: all 0.18s;
+      user-select: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .radio-card:hover { border-color: rgba(217,82,21,0.28); background: rgba(217,82,21,0.025); }
+    .radio-card:has(input:checked) {
+      border-color: var(--accent);
+      background: var(--accent-l);
+      box-shadow: 0 0 0 4px rgba(217,82,21,0.07), 0 1px 3px rgba(0,0,0,0.04);
+    }
+    /* Custom radio circle */
+    .radio-circle {
+      width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+      border: 1.5px solid var(--line);
+      display: grid; place-items: center;
+      transition: all 0.18s;
+      background: var(--bg);
+    }
+    .radio-card:has(input:checked) .radio-circle {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+    .radio-circle::after {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #fff;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .radio-card:has(input:checked) .radio-circle::after { opacity: 1; }
+    .radio-card input { display: none; }
+    .radio-card-body { flex: 1; }
+    .radio-card-title { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+    .radio-card-sub   { font-size: 11.5px; color: var(--fg2); margin-top: 2px; }
+    .radio-card-badge {
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      padding: 3px 8px; border-radius: 5px;
+      flex-shrink: 0;
+    }
+    .badge-entry  { color: #1f7a38; background: rgba(31,122,56,0.09); border: 1px solid rgba(31,122,56,0.2); }
+    .badge-mid    { color: #9a6a08; background: rgba(154,106,8,0.09); border: 1px solid rgba(154,106,8,0.2); }
+    .badge-senior { color: #6040b0; background: rgba(96,64,176,0.09); border: 1px solid rgba(96,64,176,0.2); }
+
+    /* Primary button */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 24px; border-radius: var(--rs);
+      background: var(--ink); color: #fff;
+      border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px; font-weight: 600;
+      letter-spacing: 0.01em;
+      transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+    .btn-primary:hover {
+      background: var(--accent);
+      box-shadow: 0 6px 18px rgba(217,82,21,0.28);
+    }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-primary:disabled { opacity: 0.32; cursor: not-allowed; pointer-events: none; }
+    .btn-primary svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Drop zone */
+    .dropzone {
+      border: 1.5px dashed rgba(0,0,0,0.14);
+      border-radius: var(--r);
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--surface);
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .dropzone:hover, .dropzone.over {
+      border-color: var(--accent);
+      background: var(--accent-l);
+    }
+    .dropzone:hover .dz-icon svg { stroke: var(--accent); }
+    .dz-icon { margin-bottom: 12px; }
+    .dz-icon svg { width: 34px; height: 34px; stroke: var(--fg3); fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.18s; }
+    .dropzone h4 { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 5px; }
+    .dropzone p  { font-size: 12px; color: var(--fg2); }
+    .dropzone p u { color: var(--accent); cursor: pointer; text-decoration-color: rgba(217,82,21,0.4); }
+
+    .file-selected {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 14px; border-radius: var(--rs);
+      background: var(--accent-l); border: 1px solid var(--accent-m);
+      font-size: 13px; color: var(--accent); font-weight: 500;
+      margin-bottom: 18px;
+    }
+    .file-selected svg { width: 14px; height: 14px; flex-shrink: 0; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; }
+    .file-selected span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Resume on file */
+    .resume-on-file {
+      display: flex; align-items: flex-start; gap: 13px;
+      padding: 16px 18px; border-radius: var(--r);
+      background: var(--green-bg); border: 1.5px solid var(--green-bdr);
+      margin-bottom: 28px;
+    }
+    .rof-icon {
+      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+      background: rgba(26,138,80,0.12); border: 1px solid var(--green-bdr);
+      display: grid; place-items: center;
+    }
+    .rof-icon svg { width: 13px; height: 13px; stroke: var(--green); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .rof-title { font-size: 13px; font-weight: 600; color: #145c38; margin-bottom: 3px; }
+    .rof-sub   { font-size: 12px; color: #2a7a3b; line-height: 1.55; }
+
+    /* ─── Setup screen ─── */
+    .setup-header { margin-bottom: 36px; }
+    .setup-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px; font-weight: 400;
+      color: var(--ink); margin-bottom: 8px;
+      line-height: 1.2;
+    }
+    .setup-header p { font-size: 13px; color: var(--fg2); line-height: 1.6; }
+
+    .progress-wrap { margin-bottom: 28px; }
+    .progress-track { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #f07040); border-radius: 4px; width: 0; transition: width 0.65s cubic-bezier(0.23,1,0.32,1); }
+    .progress-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .progress-label { font-size: 11px; color: var(--fg3); }
+    .progress-pct   { font-size: 11px; font-weight: 600; color: var(--accent); }
+
+    .task-list { display: flex; flex-direction: column; gap: 8px; }
+    .task {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 16px;
+      border-radius: var(--rs);
+      border: 1.5px solid var(--line);
+      background: var(--surface);
+      font-size: 13px; color: var(--fg3);
+      transition: all 0.3s cubic-bezier(0.23,1,0.32,1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .task.running {
+      border-color: var(--accent-m); background: var(--accent-l); color: var(--ink);
+    }
+    .task.done {
+      border-color: var(--green-bdr); background: var(--green-bg); color: #145c38;
+    }
+    .task-status { flex-shrink: 0; width: 18px; display: grid; place-items: center; }
+    .task-idle   { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.12); }
+    .task-check  {
+      width: 17px; height: 17px; border-radius: 50%;
+      background: var(--green); display: grid; place-items: center;
+    }
+    .task-check svg { width: 8px; height: 8px; stroke: #fff; fill: none; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2px solid rgba(217,82,21,0.2); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Mobile hamburger / mobile header ─── */
+    .mobile-header {
+      display: none;
+      align-items: center; justify-content: space-between;
+      padding: 18px 20px;
+      background: #111009;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .mobile-brand {
+      display: flex; align-items: center; gap: 9px;
+      text-decoration: none;
+    }
+    .mobile-brand-icon {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: var(--accent);
+      display: grid; place-items: center;
+    }
+    .mobile-brand-icon svg { width: 11px; height: 11px; stroke: #fff; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    .mobile-brand-name {
+      font-size: 15px; font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .mobile-step-badge {
+      font-size: 11px; font-weight: 600;
+      color: var(--accent);
+      background: rgba(217,82,21,0.12);
+      border: 1px solid rgba(217,82,21,0.22);
+      padding: 4px 10px; border-radius: 20px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 800px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .mobile-header { display: flex; }
+      .main { padding: 32px 20px 60px; align-items: flex-start; }
+      .stepper { margin-bottom: 36px; }
+      .step-title { font-size: 24px; }
+    }
+
+    @media (max-width: 480px) {
+      .main { padding: 24px 16px 50px; }
+      .step-title { font-size: 22px; }
+      .btn-primary { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Mobile top bar -->
+<header class="mobile-header">
+  <a href="/" class="mobile-brand">
+    <div class="mobile-brand-icon">
+      <svg viewBox="0 0 13 13">
+        <path d="M2 2 L8 6.5 L2 11" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="10.5" cy="6.5" r="1.6" fill="#fff"/>
+      </svg>
+    </div>
+    <span style="color:#e8e2d9;"><span>Path</span><span style="color:var(--accent)">Hire</span></span>
+  </a>
+  <div class="mobile-step-badge" id="mobile-step-badge">Step 1 of 3</div>
+</header>
+
+<div class="shell">
+
+  <!-- ─── Sidebar ─── -->
+  <aside class="sidebar">
+    <a href="/" class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 13 13">
+          <path d="M2 2 L8 6.5 L2 11" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle cx="10.5" cy="6.5" r="1.6" fill="#fff"/>
+        </svg>
+      </div>
+      <span class="brand-name">
+        <span class="brand-path">Path</span><span class="brand-hire">Hire</span>
+      </span>
+    </a>
+
+    <div class="sb-head">
+      <h2>Let's get<br><em>you</em> hired.</h2>
+      <p>Three quick steps and we'll personalise your entire job search — from first match to final offer.</p>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <ul class="feat-list">
+      <li>
+        <span class="feat-dot"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></span>
+        Real-time remote job matching based on your skills
+      </li>
+      <li>
+        <span class="feat-dot"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></span>
+        AI resume scoring with actionable improvement tips
+      </li>
+      <li>
+        <span class="feat-dot"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></span>
+        Role-specific resume tailoring per application
+      </li>
+      <li>
+        <span class="feat-dot"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></span>
+        Verified recruiter contact details surfaced for you
+      </li>
+      <li>
+        <span class="feat-dot"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></span>
+        Centralised application tracker and status board
+      </li>
+    </ul>
+
+    <div class="sb-footer">
+      <div class="sb-track">
+        <div class="sb-seg" id="sb-seg-1"></div>
+        <div class="sb-seg" id="sb-seg-2"></div>
+        <div class="sb-seg" id="sb-seg-3"></div>
+      </div>
+      <div class="sb-step-label" id="sb-label">Step <b>1</b> of 3</div>
+    </div>
+  </aside>
+
+  <!-- ─── Main ─── -->
+  <main class="main">
+    <div class="step-wrap">
+
+      <!-- Stepper dots -->
+      <div class="stepper">
+        <div class="step-node active" id="dot-1">
+          <div class="step-ball">1</div>
+          <span class="step-name">Target Role</span>
+        </div>
+        <div class="step-connector" id="conn-1"></div>
+        <div class="step-node" id="dot-2">
+          <div class="step-ball">2</div>
+          <span class="step-name">Resume</span>
+        </div>
+        <div class="step-connector" id="conn-2"></div>
+        <div class="step-node" id="dot-3">
+          <div class="step-ball">3</div>
+          <span class="step-name">Setting Up</span>
+        </div>
+      </div>
+
+      <!-- ── Step 1 ── -->
+      <div class="step active" id="step-1">
+        <div class="step-eyebrow">Step 1 of 3</div>
+        <h1 class="step-title">What role are you targeting?</h1>
+        <p class="step-sub">We'll use your target role and seniority to surface the most relevant remote opportunities and calibrate your resume score.</p>
+
+        <div class="field">
+          <label class="field-label">Job Title</label>
+          <input class="field-input" id="job-title" type="text"
+                 placeholder="e.g. Software Engineer, Product Manager…"
+                 value="">
+        </div>
+
+        <span class="section-label">Seniority Level</span>
+        <div class="radio-grid">
+          <label class="radio-card">
+            <input type="radio" name="exp" value="Entry">
+            <div class="radio-circle"></div>
+            <div class="radio-card-body">
+              <div class="radio-card-title">Entry Level</div>
+              <div class="radio-card-sub">0 – 2 years of professional experience</div>
+            </div>
+            <span class="radio-card-badge badge-entry">Junior</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="exp" value="Mid">
+            <div class="radio-circle"></div>
+            <div class="radio-card-body">
+              <div class="radio-card-title">Mid Level</div>
+              <div class="radio-card-sub">2 – 5 years of professional experience</div>
+            </div>
+            <span class="radio-card-badge badge-mid">Mid</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="exp" value="Senior">
+            <div class="radio-circle"></div>
+            <div class="radio-card-body">
+              <div class="radio-card-title">Senior Level</div>
+              <div class="radio-card-sub">5+ years of professional experience</div>
+            </div>
+            <span class="radio-card-badge badge-senior">Senior</span>
+          </label>
+        </div>
+
+        <button class="btn-primary" onclick="goStep2()">
+          Continue
+          <svg viewBox="0 0 14 14"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
+        </button>
+      </div>
+
+      <!-- ── Step 2 ── -->
+      <div class="step" id="step-2">
+        <div class="step-eyebrow">Step 2 of 3</div>
+        <h1 class="step-title">Upload your resume</h1>
+        <p class="step-sub">Your resume is the foundation of everything — matching, scoring, and tailoring. We only accept PDF to preserve your formatting.</p>
+
+        <div class="dropzone" id="dropzone" onclick="document.getElementById('resume-file').click()">
+          <div class="dz-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <polyline points="9 15 12 12 15 15"/>
+            </svg>
+          </div>
+          <h4>Drop your PDF here</h4>
+          <p>or <u onclick="document.getElementById('resume-file').click();event.stopPropagation()">browse files</u> from your computer</p>
+        </div>
+        <input type="file" id="resume-file" accept=".pdf" style="display:none" onchange="handleFile(this)">
+
+        <div class="file-selected" id="file-selected" style="display:none;">
+          <svg viewBox="0 0 14 14"><path d="M11 2H5a1 1 0 00-1 1v8a1 1 0 001 1h7a1 1 0 001-1V4.5L11 2z"/><polyline points="11 2 11 5 14 5"/></svg>
+          <span id="file-name">—</span>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn-primary" style="background:var(--bg);color:var(--fg);border:1.5px solid var(--line);box-shadow:none;" onclick="goBack1()">
+            <svg viewBox="0 0 14 14" style="transform:rotate(180deg)"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
+            Back
+          </button>
+          <button class="btn-primary" id="step2-btn" onclick="uploadAndContinue()" disabled>
+            Upload &amp; Continue
+            <svg viewBox="0 0 14 14"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Step 3 ── -->
+      <div class="step" id="step-3">
+        <div class="setup-header">
+          <div class="step-eyebrow">Step 3 of 3</div>
+          <h2>Setting things up…</h2>
+          <p>This usually takes under a minute. Please stay on this page.</p>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-track"><div class="progress-fill" id="prog-fill"></div></div>
+          <div class="progress-meta">
+            <div class="progress-label" id="prog-text">Starting…</div>
+            <div class="progress-pct" id="prog-label">0%</div>
+          </div>
+        </div>
+
+        <div class="task-list">
+          <div class="task" id="task-1">
+            <div class="task-status" id="ts-1"><div class="task-idle"></div></div>
+            Saving your role preferences
+          </div>
+          <div class="task" id="task-2">
+            <div class="task-status" id="ts-2"><div class="task-idle"></div></div>
+            Importing your resume
+          </div>
+          <div class="task" id="task-3">
+            <div class="task-status" id="ts-3"><div class="task-idle"></div></div>
+            Running AI resume analysis
+          </div>
+          <div class="task" id="task-4">
+            <div class="task-status" id="ts-4"><div class="task-idle"></div></div>
+            Searching remote jobs for <strong id="task-role" style="margin-left:3px;"></strong>
+          </div>
+          <div class="task" id="task-5">
+            <div class="task-status" id="ts-5"><div class="task-idle"></div></div>
+            Building your personalised job board
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  let selectedFile = null;
+
+  /* ── Helpers ── */
+  function showStep(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('step-' + n).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setDot(n, state) {
+    const d = document.getElementById('dot-' + n);
+    d.className = 'step-node ' + state;
+    d.querySelector('.step-ball').textContent = state === 'done' ? '✓' : n;
+  }
+
+  function setConnector(n, done) {
+    document.getElementById('conn-' + n).classList.toggle('done', done);
+  }
+
+  function setSbProgress(step) {
+    ['1','2','3'].forEach(i => {
+      const seg = document.getElementById('sb-seg-' + i);
+      const idx = parseInt(i);
+      seg.className = 'sb-seg' + (idx < step ? ' done' : idx === step ? ' active' : '');
+    });
+    const label = document.getElementById('sb-label');
+    const mBadge = document.getElementById('mobile-step-badge');
+    if (step < 4) {
+      label.innerHTML = `Step <b>${step}</b> of 3`;
+      if (mBadge) mBadge.textContent = `Step ${step} of 3`;
+    } else {
+      label.innerHTML = `<b>Complete ✓</b>`;
+      if (mBadge) mBadge.textContent = `Complete ✓`;
+    }
+  }
+
+  function setProgress(pct, text) {
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-label').textContent = pct + '%';
+    if (text) document.getElementById('prog-text').textContent = text;
+  }
+
+  /* ── Navigation ── */
+  function goStep2() {
+    const title = document.getElementById('job-title').value.trim();
+    const exp   = document.querySelector('input[name="exp"]:checked');
+    if (!title) { flashInvalid('job-title', 'Please enter a target job title.'); return; }
+    if (!exp)   { alert('Please select a seniority level.'); return; }
+    sessionStorage.setItem('ob_role', title);
+    sessionStorage.setItem('ob_exp',  exp.value);
+    const el = document.getElementById('task-role');
+    if (el) el.textContent = title;
+    setDot(1, 'done'); setConnector(1, true); setDot(2, 'active'); setSbProgress(2); showStep(2);
+  }
+
+  function goBack1() {
+    setDot(2, ''); setConnector(1, false); setDot(1, 'active'); setSbProgress(1); showStep(1);
+  }
+
+  function goStep3() {
+    setDot(2, 'done'); setConnector(2, true); setDot(3, 'active'); setSbProgress(3); showStep(3); runSetup();
+  }
+
+  /* ── File handling ── */
+  function handleFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert('File is too large. Please upload a PDF under 5 MB.'); return; }
+    selectedFile = file;
+    document.getElementById('file-name').textContent = file.name;
+    document.getElementById('file-selected').style.display = 'flex';
+    document.getElementById('step2-btn').disabled = false;
+  }
+
+  const dz = document.getElementById('dropzone');
+  if (dz) {
+    dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', ()  => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('over');
+      const file = e.dataTransfer?.files[0];
+      if (file && file.type === 'application/pdf') {
+        const dt = new DataTransfer(); dt.items.add(file);
+        const inp = document.getElementById('resume-file');
+        inp.files = dt.files; handleFile(inp);
+      }
+    });
+  }
+
+  async function uploadAndContinue() {
+    if (!selectedFile) return;
+    const btn = document.getElementById('step2-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="border-color:rgba(255,255,255,0.25);border-top-color:#fff;width:13px;height:13px;"></div> Uploading…';
+    const form = new FormData();
+    form.append('resume_pdf', selectedFile);
+    try { await fetch('/resume', { method: 'POST', body: form }); } catch (_) {}
+    goStep3();
+  }
+
+  /* ── Task runner ── */
+  function setTaskState(id, state) {
+    const task = document.getElementById('task-' + id);
+    const ts   = document.getElementById('ts-' + id);
+    task.className = 'task ' + state;
+    if (state === 'running') {
+      ts.innerHTML = '<div class="spinner"></div>';
+    } else if (state === 'done') {
+      ts.innerHTML = '<div class="task-check"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></div>';
+    } else {
+      ts.innerHTML = '<div class="task-idle"></div>';
+    }
+  }
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  async function savePreferences() {
+    try {
+      await fetch('/onboarding/save-preferences', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: sessionStorage.getItem('ob_role') || '',
+          experience_level: sessionStorage.getItem('ob_exp') || ''
+        }),
+      });
+    } catch (_) {}
+  }
+
+  async function completeOnboarding() {
+    try { await fetch('/onboarding/complete', { method: 'POST' }); } catch (_) {}
+    await delay(600);
+  }
+
+  const TASKS = [
+    { id: 1, fn: savePreferences,    pct: 20,  text: 'Saving preferences…' },
+    { id: 2, fn: () => delay(1200),  pct: 40,  text: 'Importing resume…' },
+    { id: 3, fn: () => delay(1800),  pct: 65,  text: 'Running AI analysis…' },
+    { id: 4, fn: () => delay(1400),  pct: 85,  text: 'Finding matching jobs…' },
+    { id: 5, fn: completeOnboarding, pct: 100, text: 'Almost done!' },
+  ];
+
+  async function runSetup() {
+    for (const t of TASKS) {
+      setTaskState(t.id, 'running');
+      setProgress(t.pct - 10, t.text);
+      await t.fn();
+      setTaskState(t.id, 'done');
+      setProgress(t.pct, t.text);
+      await delay(200);
+    }
+    setSbProgress(4);
+    await delay(500);
+    window.location.href = '/jobs';
+  }
+
+  function flashInvalid(id, msg) {
+    const el = document.getElementById(id);
+    el.style.borderColor = '#d95215';
+    el.style.boxShadow   = '0 0 0 4px rgba(217,82,21,0.12)';
+    el.focus();
+    setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 2200);
+    const prev = el.placeholder;
+    el.setAttribute('placeholder', msg);
+    setTimeout(() => el.setAttribute('placeholder', prev), 2200);
+  }
+
+  /* Init sidebar */
+  setSbProgress(1);
+
+  const jtInput = document.getElementById('job-title');
+  if (jtInput) jtInput.addEventListener('keydown', e => { if (e.key === 'Enter') goStep2(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+version: '3.8'
+
+# ── ONE COMMAND: docker compose up --build ────────────────────────────────────
+#
+# Database is now MySQL — set DATABASE_URL in .env
+# No local DB container needed if using a hosted MySQL (PlanetScale, Railway, etc.)
+#
+# To run:         docker compose up --build
+# To run silent:  docker compose up --build -d
+# To stop:        docker compose down
+# To view logs:   docker compose logs -f
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  app:
+    build: .
+    container_name: job-mail-scheduler
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app              # live reload during development
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=development
+      - OAUTHLIB_INSECURE_TRANSPORT=1   # allow http on localhost — REMOVE in production
+    restart: unless-stopped

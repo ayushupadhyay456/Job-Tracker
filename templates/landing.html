@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayush Project — Premium Career Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+    <style>
+        :root {
+            --ink:      #0f0e0d;
+            --ink-2:    #3d3a35;
+            --ink-3:    #8a8278;
+            --paper:    #faf8f5;
+            --accent:   #c8511a;
+            --accent-2: #e8764a;
+            --serif:    'DM Serif Display', serif;
+            --sans:     'DM Sans', sans-serif;
+            --syne:     'Syne', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { 
+            height: 100%; 
+            background: var(--ink); 
+            color: var(--paper); 
+            font-family: var(--sans); 
+            -webkit-font-smoothing: antialiased; 
+            overflow-x: hidden;
+        }
+
+        /* 3D Canvas Container */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Layout Shell */
+        .shell { 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 40px 56px; 
+            position: relative; 
+            z-index: 2; /* Sits above 3D */
+        }
+        
+        .shell::before {
+            content: ''; position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(250,248,245,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(250,248,245,.04) 1px, transparent 1px);
+            background-size: 56px 56px; pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Navigation */
+        nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; margin-bottom: 80px; }
+        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .logo-mark { width: 32px; height: 32px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; }
+        .logo-name { font-family: var(--serif); font-size: 20px; color: var(--paper); }
+        .logo-name span { color: var(--accent-2); font-style: italic; }
+        .btn-nav { font-size: 14px; font-weight: 500; padding: 10px 20px; border-radius: 8px; background: var(--accent); color: var(--paper); text-decoration: none; transition: transform 0.2s; }
+        .btn-nav:hover { transform: scale(1.05); }
+
+        /* Hero */
+        .hero { position: relative; z-index: 5; max-width: 800px; margin-bottom: 100px; }
+        .hero-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 24px; }
+        .hero-title { font-family: var(--serif); font-size: clamp(48px, 8vw, 84px); line-height: 1.05; letter-spacing: -.03em; margin-bottom: 32px; }
+        .hero-title em { font-style: italic; color: var(--accent-2); }
+        .hero-desc { font-size: 18px; color: rgba(250,248,245,.55); line-height: 1.7; max-width: 520px; margin-bottom: 48px; }
+
+        /* Pricing Grid */
+        .pricing-section { position: relative; z-index: 5; padding: 100px 0; border-top: 1px solid rgba(250,248,245,.08); display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .pricing-heading { font-family: var(--serif); font-size: clamp(36px, 5vw, 54px); margin-bottom: 16px; }
+        .pricing-sub { font-size: 16px; color: var(--ink-3); margin-bottom: 56px; max-width: 480px; line-height: 1.6; }
+
+        .plans-grid { display: flex; justify-content: center; gap: 24px; max-width: 1200px; width: 100%; flex-wrap: wrap; }
+        .plan-card {
+            background: rgba(15, 14, 13, 0.8); /* Slight opacity to see 3D behind */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(250,248,245,.1); border-radius: 24px;
+            padding: 48px 32px; width: 320px; text-align: left; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column;
+        }
+        .plan-card:hover { transform: translateY(-10px); border-color: var(--accent); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .plan-card--featured { border: 1px solid var(--accent); background: rgba(200,81,26,.05); position: relative; transform: scale(1.05); }
+        .plan-popular { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; font-size: 10px; font-weight: 700; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; }
+
+        .plan-price { font-family: var(--serif); font-size: 44px; margin: 20px 0; }
+        .plan-price span { font-size: 16px; color: var(--ink-3); font-family: var(--sans); }
+        .plan-tagline { font-size: 13px; color: var(--accent); font-style: italic; margin-bottom: 24px; min-height: 40px; }
+        .plan-features { list-style: none; margin-bottom: 32px; flex: 1; }
+        .plan-features li { font-size: 14px; color: rgba(250,248,245,.6); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+        .plan-features li::before { content: '✓'; color: var(--accent); font-weight: bold; }
+        .plan-cta { display: block; text-align: center; padding: 14px; border-radius: 10px; font-weight: 600; text-decoration: none; border: 1px solid rgba(250,248,245,.2); color: var(--paper); transition: all 0.2s; }
+        .plan-cta:hover { background: var(--paper); color: var(--ink); }
+        .plan-cta--featured { background: var(--accent); border-color: var(--accent); }
+
+        /* Footer */
+        footer { background: #080808; padding: 80px 56px 40px; border-top: 1px solid rgba(250,248,245,.05); position: relative; z-index: 10; }
+        .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 2fr; gap: 40px; max-width: 1200px; margin: 0 auto 60px; }
+        .footer-col h4 { font-family: var(--syne); font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px; color: var(--paper); }
+        .footer-col ul { list-style: none; }
+        .footer-col ul li { margin-bottom: 12px; }
+        .footer-col ul li a { color: var(--ink-3); text-decoration: none; font-size: 14px; transition: color .2s; }
+        .footer-col ul li a:hover { color: var(--accent-2); }
+        .footer-bottom { display: flex; justify-content: space-between; border-top: 1px solid rgba(250,248,245,0.05); padding-top: 24px; color: var(--ink-3); font-size: 12px; }
+
+        @media (max-width: 900px) { 
+            .shell { padding: 30px 24px; } 
+            .footer-grid { grid-template-columns: 1fr 1fr; } 
+            .hero-title { font-size: 42px; } 
+            .plan-card--featured { transform: scale(1); margin: 20px 0; } 
+        }
+    </style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<div class="shell">
+    <nav>
+        <a href="/" class="logo">
+            <div class="logo-mark"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="#faf8f5" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <span class="logo-name">Ayush <span>Project</span></span>
+        </a>
+        <div style="display: flex; gap: 24px; align-items: center;">
+            <a href="/login" style="color: rgba(250,248,245,.6); text-decoration: none; font-size: 14px;">Sign in</a>
+            <a href="/signup" class="btn-nav">Get Started</a>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <p class="hero-eyebrow">Career Intelligence</p>
+        <h1 class="hero-title">Beat the <em>robot</em>.<br>Land the dream job.</h1>
+        <p class="hero-desc">We score your resume against the world's top remote jobs. Beat the ATS, instantly analyze recruiter emails, and get the edge you need.</p>
+        <a href="/signup" class="btn-nav" style="padding: 16px 32px; font-size: 16px;">Start your 7-day free trial</a>
+    </div>
+
+    <div class="pricing-section" id="pricing">
+        <p style="font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 16px;">Premium Access</p>
+        <h2 class="pricing-heading">Three ways to <em>grow</em>.</h2>
+        <p class="pricing-sub">Full access to our ATS-beating tools. Cancel anytime during your 7-day trial.</p>
+
+        <div class="plans-grid">
+            <div class="plan-card">
+                <p style="font-size: 12px; font-weight: 700; color: var(--accent-2); text-transform: uppercase;">Monthly</p>
+                <div class="plan-price"><sup>$</sup>8<span>/mo</span></div>
+                <p class="plan-tagline">The price of a fancy latte to automate your career.</p>
+                <ul class="plan-features">
+                    <li>50 daily job scans</li>
+                    <li>Smart Email Analysis</li>
+                    <li>Instant ATS Scoring</li>
+                </ul>
+                <a href="/signup" class="plan-cta">Start Trial</a>
+            </div>
+
+            <div class="plan-card plan-card--featured">
+                <span class="plan-popular">Best Value</span>
+                <p style="font-size: 12px; font-weight: 700; color: var(--accent-2); text-transform: uppercase;">6 Months</p>
+                <div class="plan-price"><sup>$</sup>40</div>
+                <p class="plan-tagline">Cheaper than a single dinner date. Invest in yourself.</p>
+                <ul class="plan-features">
+                    <li>200 daily job scans</li>
+                    <li>Priority AI Processing</li>
+                    <li>Custom Forwarding Email</li>
+                </ul>
+                <a href="/signup" class="plan-cta plan-cta--featured">Start 6-Month Trial</a>
+            </div>
+
+            <div class="plan-card">
+                <p style="font-size: 12px; font-weight: 700; color: var(--accent-2); text-transform: uppercase;">Annual</p>
+                <div class="plan-price"><sup>$</sup>100</div>
+                <p class="plan-tagline">One tank of gas for a full year of career growth.</p>
+                <ul class="plan-features">
+                    <li>Unlimited AI matches</li>
+                    <li>Early access to new tools</li>
+                    <li>The "Set it & Forget it" choice</li>
+                </ul>
+                <a href="/signup" class="plan-cta">Go Annual</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="footer-grid">
+        <div class="footer-col">
+            <div style="font-family: var(--syne); font-weight: 800; font-size: 20px; margin-bottom: 16px;">Ayush<span style="color: var(--accent-2);">Project</span></div>
+            <p style="font-size: 13px; color: var(--ink-3); line-height: 1.6;">Built for professionals who value their time. Stop guessing, start matching.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Platform</h4>
+            <ul>
+                <li><a href="/jobs">Remote Jobs</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="/signup">Free ATS Check</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Support</h4>
+            <ul>
+                <li><a href="#">Help Center</a></li>
+                <li><a href="#">Contact Us</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Newsletter</h4>
+            <p style="font-size: 13px; color: var(--ink-3); margin-bottom: 12px;">Get the top 1% of remote jobs weekly.</p>
+            <div style="display: flex; gap: 8px;">
+                <input type="email" placeholder="email@example.com" style="background: rgba(250,248,245,0.05); border: 1px solid rgba(250,248,245,0.1); padding: 8px 12px; border-radius: 6px; color: white; flex: 1;">
+                <button style="background: var(--accent); border: none; padding: 8px 16px; border-radius: 6px; color: white; cursor: pointer;">Join</button>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2026 Ayush Project. All rights reserved.</p>
+        <p>Built for the global workforce.</p>
+    </div>
+</footer>
+
+<script>
+    let scene, camera, renderer, stars, starGeo;
+    let targetX = 0, targetY = 0;
+    let currentX = 0, currentY = 0;
+
+    function init() {
+        scene = new THREE.Scene();
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+        camera.position.z = 1;
+        camera.rotation.x = Math.PI / 2;
+
+        renderer = new THREE.WebGLRenderer({ 
+            antialias: false, // Turn off for massive performance boost
+            alpha: true, 
+            powerPreference: "high-performance" 
+        });
+        
+        // LIMIT PIXEL RATIO to 2 (Crucial for performance)
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        starGeo = new THREE.BufferGeometry();
+        let positions = [];
+        // Reduced to 1500 for better mobile/laptop performance
+        for (let i = 0; i < 1500; i++) {
+            positions.push(Math.random() * 600 - 300);
+            positions.push(Math.random() * 600 - 300);
+            positions.push(Math.random() * 600 - 300);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+        let starMaterial = new THREE.PointsMaterial({
+            color: 0xc8511a, 
+            size: 1.2, // Slightly larger to compensate for fewer particles
+            transparent: true,
+            opacity: 0.5,
+            blending: THREE.AdditiveBlending
+        });
+
+        stars = new THREE.Points(starGeo, starMaterial);
+        scene.add(stars);
+
+        window.addEventListener('resize', onWindowResize, false);
+        // Passive listener for better scroll/mouse performance
+        document.addEventListener('mousemove', onMouseMove, { passive: true });
+        
+        animate();
+    }
+
+    function onMouseMove(event) {
+        targetX = (event.clientX - window.innerWidth / 2) / 200;
+        targetY = (event.clientY - window.innerHeight / 2) / 200;
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // Smooth Lerping (Linear Interpolation)
+        currentX += (targetX - currentX) * 0.02; 
+        currentY += (targetY - currentY) * 0.02;
+
+        stars.rotation.y += 0.0005;
+        stars.position.x = currentX;
+        stars.position.y = -currentY;
+
+        renderer.render(scene, camera);
+    }
+
+    init();
+</script>
+
+</body>
+</html>

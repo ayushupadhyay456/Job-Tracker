@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="pricing" style="max-width: 1000px; margin: 0 auto; text-align: center; padding: 40px 20px;">
+  <h1 style="font-family: 'Syne', sans-serif; font-size: 2.5rem; margin-bottom: 12px;">Premium Job Intelligence</h1>
+  <p style="color: var(--mid); margin-bottom: 48px;">No free tier. Just high-accuracy AI matching for serious job seekers.</p>
+
+  <div class="plans" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+
+    <div class="card plan" style="padding: 32px; display: flex; flex-direction: column;">
+      <h2 style="font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em;">Basic</h2>
+      <p class="price" style="font-size: 3rem; font-weight: 800; margin: 20px 0;">$9<span style="font-size: 1rem; color: var(--mid);">/mo</span></p>
+      <ul style="list-style: none; text-align: left; margin-bottom: 32px; flex-grow: 1;">
+        <li style="margin-bottom: 12px;">✓ Standard AI Analysis</li>
+      </ul>
+      {% if current_user.is_authenticated and current_user.plan == "basic" and current_user.has_access %}
+        <button class="btn" style="background: var(--border); cursor: default;" disabled>Current Plan</button>
+      {% else %}
+        <a href="{{ url_for('billing.checkout', plan='basic') }}" class="btn-apply" style="text-decoration: none;">Start 7-Day Trial</a>
+      {% endif %}
+    </div>
+
+    <div class="card plan" style="padding: 32px; border: 2px solid var(--accent); position: relative; transform: scale(1.05); background: #fff;">
+      <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 700;">MOST POPULAR</span>
+      <h2 style="font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em;">Pro</h2>
+      <p class="price" style="font-size: 3rem; font-weight: 800; margin: 20px 0;">$19<span style="font-size: 1rem; color: var(--mid);">/mo</span></p>
+      <ul style="list-style: none; text-align: left; margin-bottom: 32px; flex-grow: 1;">
+        <li style="margin-bottom: 12px;">✓ 100 job matches / day</li>
+        <li style="margin-bottom: 12px;">✓ Priority Gemini Processing</li>
+        <li style="margin-bottom: 12px;">✓ Application Tracker</li>
+        <li style="margin-bottom: 12px;">✓ Custom Cover Letter Tips</li>
+      </ul>
+      {% if current_user.is_authenticated and current_user.plan == "pro" and current_user.has_access %}
+        <button class="btn" style="background: var(--border); cursor: default;" disabled>Current Plan</button>
+      {% else %}
+        <a href="{{ url_for('billing.checkout', plan='pro') }}" class="btn-apply" style="text-decoration: none; background: var(--accent);">Start Pro Trial</a>
+      {% endif %}
+    </div>
+
+    <div class="card plan" style="padding: 32px; display: flex; flex-direction: column;">
+      <h2 style="font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em;">Premium</h2>
+      <p class="price" style="font-size: 3rem; font-weight: 800; margin: 20px 0;">$39<span style="font-size: 1rem; color: var(--mid);">/mo</span></p>
+      <ul style="list-style: none; text-align: left; margin-bottom: 32px; flex-grow: 1;">
+        <li style="margin-bottom: 12px;">✓ <strong>Unlimited</strong> job matches</li>        
+        <li style="margin-bottom: 12px;">✓ Executive Resume Review</li>
+        <li style="margin-bottom: 12px;">✓ Priority Support</li>
+      </ul>
+      {% if current_user.is_authenticated and current_user.plan == "premium" and current_user.has_access %}
+        <button class="btn" style="background: var(--border); cursor: default;" disabled>Current Plan</button>
+      {% else %}
+        <a href="{{ url_for('billing.checkout', plan='premium') }}" class="btn-apply" style="text-decoration: none;">Go Unlimited</a>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <p style="margin-top: 40px; font-size: 0.85rem; color: var(--mid);">
+    All plans start with a 7-day trial. You can cancel via your Gumroad library at any time.
+  </p>
+</section>
+
+{% endblock %}

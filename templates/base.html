@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PathHire{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --sw:      256px;
+            --bg:      #f6f4f1;
+            --bg2:     #edebe6;
+            --surface: #ffffff;
+            --dark:    #0d0c0b;
+            --dark2:   #161513;
+            --dark3:   #1f1d1a;
+            --accent:  #d95215;
+            --a12:     rgba(217,82,21,0.12);
+            --a25:     rgba(217,82,21,0.25);
+            --fg:      #1c1a17;
+            --fg2:     #6c6560;
+            --fg3:     #a09890;
+            --line:    rgba(0,0,0,0.07);
+            --lined:   rgba(255,255,255,0.07);
+            --r:  12px;
+            --rs: 8px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Geist', system-ui, sans-serif;
+            background: var(--bg);
+            display: flex; min-height: 100vh;
+            color: var(--fg);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ─── SIDEBAR ─── */
+        .sidebar {
+            width: var(--sw);
+            background: var(--dark);
+            position: fixed; inset: 0 auto 0 0;
+            display: flex; flex-direction: column;
+            padding: 18px 14px;
+            z-index: 200;
+            border-right: 1px solid var(--lined);
+        }
+
+        /* ── Wordmark / App brand ── */
+        .wm {
+            display: flex; align-items: center; gap: 9px;
+            padding: 4px 8px 18px;
+            margin-bottom: 18px;
+            border-bottom: 1px solid var(--lined);
+            text-decoration: none;
+        }
+        .wm-icon {
+            width: 28px; height: 28px; flex-shrink: 0;
+            background: var(--accent); border-radius: 7px;
+            display: grid; place-items: center;
+        }
+        .wm-icon svg { width: 13px; height: 13px; fill: #fff; }
+        /* Two-tone wordmark: Path (light) + Hire (accent) */
+        .wm-text {
+            font-size: 15px; font-weight: 700;
+            letter-spacing: -0.02em;
+            display: flex; align-items: baseline; gap: 0;
+        }
+        .wm-path { color: #ede9e3; }
+        .wm-hire { color: var(--accent); }
+
+        /* ── Profile block ── */
+        .profile-block {
+            position: relative;
+            background: var(--dark3);
+            border: 1px solid var(--lined);
+            border-radius: var(--r);
+            padding: 12px 13px;
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 22px;
+            overflow: hidden;
+            transition: border-color 0.18s;
+        }
+        .profile-block:hover { border-color: rgba(255,255,255,0.12); }
+        .profile-block:hover .avatar-edit { opacity: 1; }
+
+        .avatar {
+            width: 36px; height: 36px; flex-shrink: 0; border-radius: 9px;
+            background: linear-gradient(140deg, var(--accent) 0%, #7d2d08 100%);
+            display: grid; place-items: center;
+            font-size: 14px; font-weight: 700; color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .avatar-edit {
+            position: absolute; top: 10px; left: 10px;
+            width: 36px; height: 36px; border-radius: 9px;
+            background: rgba(0,0,0,0.55);
+            display: grid; place-items: center;
+            color: #fff; font-size: 12px;
+            opacity: 0; transition: opacity 0.15s;
+            pointer-events: none;
+        }
+
+        .pfp-file {
+            position: absolute; inset: 0;
+            opacity: 0; cursor: pointer;
+            font-size: 0;
+        }
+
+        .profile-meta { flex: 1; min-width: 0; }
+        .profile-name {
+            font-size: 13px; font-weight: 600; color: #ede9e3;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* ── Plan chip — colour-coded by tier ──
+           Jinja sets data-plan on .plan-chip.
+           CSS [data-plan] selectors handle the colour logic.          */
+        .plan-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 9px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            padding: 2px 8px; border-radius: 4px; margin-top: 3px;
+            /* default / fallback = accent orange */
+            color: var(--accent);
+            background: var(--a12);
+            border: 1px solid var(--a25);
+        }
+        .plan-chip::before {
+            content: ''; width: 4px; height: 4px;
+            border-radius: 50%; background: currentColor;
+        }
+
+        /* Monthly — warm amber */
+        .plan-chip[data-plan="monthly"] {
+            color: #b07d10;
+            background: rgba(176,125,16,0.12);
+            border-color: rgba(176,125,16,0.28);
+        }
+        /* Bi-annual / 6-month — teal */
+        .plan-chip[data-plan="biannual"],
+        .plan-chip[data-plan="bi-annual"],
+        .plan-chip[data-plan="6month"],
+        .plan-chip[data-plan="semi-annual"] {
+            color: #0e7a72;
+            background: rgba(14,122,114,0.10);
+            border-color: rgba(14,122,114,0.25);
+        }
+        /* Yearly / Annual — purple-ish indigo */
+        .plan-chip[data-plan="yearly"],
+        .plan-chip[data-plan="annual"] {
+            color: #6c45c0;
+            background: rgba(108,69,192,0.10);
+            border-color: rgba(108,69,192,0.25);
+        }
+
+        /* Nav */
+        .nav-label {
+            font-size: 9px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: #38342f; padding: 0 8px; margin-bottom: 4px;
+        }
+        .nav-list { display: flex; flex-direction: column; gap: 1px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 9px 10px; border-radius: var(--rs);
+            color: #4e4840; text-decoration: none;
+            font-size: 13px; font-weight: 500;
+            transition: color 0.15s, background 0.15s;
+            position: relative;
+        }
+        .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+        .nav-item:hover { color: #c8bfb4; background: rgba(255,255,255,0.04); }
+        .nav-item.active {
+            color: var(--accent);
+            background: var(--a12);
+            border: 1px solid var(--a25);
+        }
+        .nav-item.active::before {
+            content: '';
+            position: absolute; left: 0; top: 22%; bottom: 22%;
+            width: 2px; background: var(--accent); border-radius: 2px;
+        }
+
+        /* Upgrade nudge (only shown when plan is monthly) */
+        .upgrade-nudge {
+            margin-top: 10px;
+            background: linear-gradient(135deg, rgba(108,69,192,0.12), rgba(14,122,114,0.10));
+            border: 1px solid rgba(108,69,192,0.2);
+            border-radius: var(--rs);
+            padding: 10px 12px;
+            font-size: 11px; color: #9c8fc8; line-height: 1.5;
+        }
+        .upgrade-nudge strong { color: #c5b8f0; display: block; margin-bottom: 3px; font-size: 11.5px; }
+        .upgrade-nudge a {
+            display: inline-block; margin-top: 7px;
+            font-size: 11px; font-weight: 700;
+            color: #6c45c0; text-decoration: none;
+            background: rgba(108,69,192,0.12); border: 1px solid rgba(108,69,192,0.22);
+            padding: 3px 9px; border-radius: 4px;
+            transition: background 0.15s;
+        }
+        .upgrade-nudge a:hover { background: rgba(108,69,192,0.22); }
+
+        /* Footer */
+        .sidebar-foot {
+            margin-top: auto; padding-top: 14px;
+            border-top: 1px solid var(--lined);
+        }
+        .logout {
+            display: flex; align-items: center; gap: 8px;
+            padding: 9px 10px; border-radius: var(--rs);
+            color: #4a3535; text-decoration: none;
+            font-size: 13px; font-weight: 500;
+            transition: color 0.15s, background 0.15s;
+        }
+        .logout svg { width: 15px; height: 15px; }
+        .logout:hover { color: #e06060; background: rgba(220,38,38,0.07); }
+
+        /* ─── CANVAS ─── */
+        #bgc {
+            position: fixed;
+            top: 0; left: var(--sw);
+            width: calc(100vw - var(--sw)); height: 100vh;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* ─── MAIN ─── */
+        .main {
+            margin-left: var(--sw);
+            flex: 1; position: relative;
+            padding: 48px 52px;
+            z-index: 10;
+        }
+        /* No sidebar = full width */
+        body.no-sidebar .main {
+            margin-left: 0;
+        }
+        body.no-sidebar #bgc {
+            left: 0;
+            width: 100vw;
+        }
+
+        /* ─── SHARED COMPONENTS ─── */
+        .ph { margin-bottom: 36px; }
+        .ph-eye {
+            font-size: 10px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.14em;
+            color: var(--accent); margin-bottom: 6px;
+        }
+        .ph-title {
+            font-size: clamp(24px, 2.6vw, 32px); font-weight: 700;
+            letter-spacing: -0.03em; line-height: 1.12; color: var(--dark);
+        }
+        .ph-sub { font-size: 13.5px; color: var(--fg2); margin-top: 5px; }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r); padding: 24px;
+            transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+        }
+        .card:hover {
+            border-color: rgba(217,82,21,0.15);
+            box-shadow: 0 6px 28px rgba(12,11,10,0.07);
+            transform: translateY(-1px);
+        }
+        .card-soft {
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: var(--rs);
+        }
+
+        .g-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: 14px; }
+        .g2     { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+        .btn {
+            display: inline-flex; align-items: center;
+            justify-content: center; gap: 6px;
+            padding: 9px 16px; border-radius: var(--rs);
+            font-family: 'Geist', sans-serif;
+            font-size: 13px; font-weight: 600;
+            background: var(--dark); color: #fff;
+            border: none; cursor: pointer;
+            text-decoration: none; white-space: nowrap;
+            transition: background 0.16s, transform 0.16s, box-shadow 0.16s;
+        }
+        .btn:hover {
+            background: var(--accent);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px var(--a25);
+        }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: var(--a12); color: var(--accent);
+            border: 1px solid var(--a25);
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 600;
+        }
+
+        .muted { color: var(--fg2); font-size: 13px; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 8px; }
+    </style>
+</head>
+<body class="{% if not (current_user.is_authenticated and current_user.subscription_status == 'active') %}no-sidebar{% endif %}">
+
+{# ── Only show sidebar if user has an active (paid) subscription ── #}
+{% if current_user.is_authenticated and current_user.subscription_status == 'active' %}
+<nav class="sidebar">
+
+    <!-- ── Brand / Wordmark ── -->
+    <a href="/jobs" class="wm">
+        <div class="wm-icon">
+            <svg viewBox="0 0 13 13">
+                <path d="M2 2 L8 6.5 L2 11" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <circle cx="10.5" cy="6.5" r="1.6" fill="#fff"/>
+            </svg>
+        </div>
+        <span class="wm-text">
+            <span class="wm-path">Path</span><span class="wm-hire">Hire</span>
+        </span>
+    </a>
+
+    <!-- ── Profile block ── -->
+    <form id="pfpForm" action="/upload-pfp" method="POST" enctype="multipart/form-data" style="display:contents;">
+        <div class="profile-block">
+            <div class="avatar">
+                {% if current_user.profile_pic %}
+                    <img src="{{ current_user.profile_pic }}" alt="">
+                {% else %}
+                    {{ (current_user.name[0]|upper) if current_user.name else 'A' }}
+                {% endif %}
+            </div>
+            <div class="avatar-edit">✎</div>
+            <div class="profile-meta">
+                <div class="profile-name">{{ current_user.name or 'User' }}</div>
+
+                {% set raw_plan = current_user.plan | default('monthly') | lower | trim %}
+                {% set plan_label = {
+                    'monthly':    'Monthly',
+                    'biannual':   'Bi-Annual',
+                    'bi-annual':  'Bi-Annual',
+                    '6month':     'Bi-Annual',
+                    'semi-annual':'Bi-Annual',
+                    'yearly':     'Yearly',
+                    'annual':     'Yearly'
+                }.get(raw_plan, raw_plan | capitalize) %}
+                <div class="plan-chip" data-plan="{{ raw_plan }}">{{ plan_label }}</div>
+            </div>
+            <input class="pfp-file" type="file" name="pfp" accept="image/*"
+                   onchange="document.getElementById('pfpForm').submit()">
+        </div>
+    </form>
+
+    <!-- ── Nav ── -->
+    <div class="nav-label">Menu</div>
+    <nav class="nav-list">
+        <a href="/jobs" class="nav-item {% if request.path=='/jobs' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+            Dashboard
+        </a>
+        <a href="/resume" class="nav-item {% if request.path=='/resume' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="9" y1="13" x2="15" y2="13"/>
+                <line x1="9" y1="17" x2="13" y2="17"/>
+            </svg>
+            My Resume
+        </a>
+    </nav>
+
+    {# Upgrade nudge removed intentionally #}
+
+    <div class="sidebar-foot">
+        <a href="/logout" class="logout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Log Out
+        </a>
+    </div>
+</nav>
+{% endif %}
+
+<canvas id="bgc"></canvas>
+
+<main class="main">
+    {% block content %}{% endblock %}
+</main>
+
+<script>
+(function () {
+    const cv   = document.getElementById('bgc');
+    const sc   = new THREE.Scene();
+    const gW   = () => window.innerWidth  - 256;
+    const gH   = () => window.innerHeight;
+    const cam  = new THREE.PerspectiveCamera(55, gW() / gH(), 0.1, 100);
+    const ren  = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true });
+    ren.setPixelRatio(Math.min(devicePixelRatio, 2));
+    ren.setSize(gW(), gH());
+    cam.position.z = 7;
+
+    // grid
+    const gm  = new THREE.LineBasicMaterial({ color: 0xd95215, transparent: true, opacity: 0.04 });
+    const grp = new THREE.Group();
+    const S = 1.1, E = 9, D = -5;
+    for (let x = -E; x <= E; x += S) {
+        grp.add(new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,-E,D), new THREE.Vector3(x,E,D)]), gm));
+    }
+    for (let y = -E; y <= E; y += S) {
+        grp.add(new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-E,y,D), new THREE.Vector3(E,y,D)]), gm));
+    }
+    sc.add(grp);
+
+    // particles
+    const N = 420, buf = new Float32Array(N * 3);
+    for (let i = 0; i < N * 3; i++) buf[i] = (Math.random() - 0.5) * 20;
+    const pg = new THREE.BufferGeometry();
+    pg.setAttribute('position', new THREE.BufferAttribute(buf, 3));
+    const pm  = new THREE.PointsMaterial({ color: 0xd95215, size: 0.02, transparent: true, opacity: 0.4 });
+    const pts = new THREE.Points(pg, pm);
+    sc.add(pts);
+
+    // torus rings
+    function ring(r, tube, x, y, z, op) {
+        const m = new THREE.Mesh(
+            new THREE.TorusGeometry(r, tube, 8, 72),
+            new THREE.MeshBasicMaterial({ color: 0xd95215, transparent: true, opacity: op })
+        );
+        m.position.set(x, y, z); sc.add(m); return m;
+    }
+    const t1 = ring(1.1, 0.007,  3.2, -1.8, -1, 0.08);
+    const t2 = ring(0.5, 0.005, -3.4,  2.0, -2, 0.06);
+
+    let mx = 0, my = 0, t = 0;
+    window.addEventListener('mousemove', e => {
+        mx = (e.clientX / window.innerWidth  - 0.5) * 2;
+        my = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+
+    (function tick() {
+        requestAnimationFrame(tick);
+        t += 0.005;
+        pts.rotation.y = t * 0.04 + mx * 0.07;
+        pts.rotation.x = my * 0.04;
+        grp.rotation.y = mx * 0.025;
+        grp.rotation.x = my * 0.018;
+        t1.rotation.z += 0.004; t1.rotation.x += 0.002;
+        t2.rotation.z -= 0.005; t2.rotation.y += 0.003;
+        ren.render(sc, cam);
+    })();
+
+    window.addEventListener('resize', () => {
+        cam.aspect = gW() / gH();
+        cam.updateProjectionMatrix();
+        ren.setSize(gW(), gH());
+    });
+})();
+</script>
+</body>
+</html>

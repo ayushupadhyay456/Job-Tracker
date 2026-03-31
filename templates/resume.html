@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="ph">
+    <div class="ph-eye">Career Profile</div>
+    <h1 class="ph-title">My Resume</h1>
+    <p class="ph-sub">Upload your PDF — we'll analyse it and find the best remote jobs for you</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     LAYOUT: left col (upload) + right col (assessment)
+════════════════════════════════════════════════════════ -->
+<div class="rp-grid">
+
+    <!-- ── LEFT: Upload card ── -->
+    <div class="card rp-upload">
+
+        {% if current_user.resume_text and current_user.resume_text|trim %}
+        <!-- ─ Resume already attached ─ -->
+        <div class="attached-state">
+            <div class="att-header">
+                <div class="att-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="9" y1="13" x2="15" y2="13"/>
+                        <line x1="9" y1="17" x2="13" y2="17"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="att-title">Resume Attached</div>
+                    <div class="att-sub">Analysed · Role detected</div>
+                </div>
+                <div class="att-check">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+            </div>
+
+            <!-- Role chip -->
+            <div class="role-detected">
+                <span class="role-label">Detected role</span>
+                <span class="role-value">{{ current_user.inferred_role or 'Software Engineer' }}</span>
+            </div>
+
+            <!-- Actions -->
+            <div class="att-actions">
+                <!-- Replace -->
+                <form action="{{ url_for('resume') }}" method="POST" enctype="multipart/form-data" style="flex:1;">
+                    <label class="btn btn-ghost btn-sm att-replace" style="width:100%; cursor:pointer;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                        </svg>
+                        Replace Resume
+                        <input type="file" name="resume_pdf" accept=".pdf" style="display:none;"
+                               onchange="this.closest('form').submit()">
+                    </label>
+                </form>
+                <!-- Remove -->
+                <form action="{{ url_for('remove_resume') }}" method="POST" style="flex:1;" 
+                      onsubmit="return confirm('Remove your resume? This will also clear your job matches.');">
+                    <button class="btn btn-danger btn-sm" type="submit" style="width:100%;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                            <path d="M10 11v6M14 11v6"/>
+                            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                        </svg>
+                        Remove
+                    </button>
+                </form>
+            </div>
+
+            <!-- Continue CTA -->
+            <a href="/jobs" class="btn btn-continue">
+                Continue to Jobs
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+            </a>
+
+            <!-- Divider -->
+            <div class="section-divider">
+                <span>What we do with your resume</span>
+            </div>
+        </div>
+        {% else %}
+        <!-- ─ No resume yet ─ -->
+        <div class="upload-header">
+            <div class="upload-icon-wrap">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+            </div>
+            <div>
+                <div class="upload-title">Attach Resume</div>
+                <div class="muted" style="font-size:11.5px; margin-top:1px;">PDF · max 10 MB</div>
+            </div>
+        </div>
+
+        <form action="{{ url_for('resume') }}" method="POST" enctype="multipart/form-data">
+            <label class="dz" id="dz" for="rf">
+                <div class="dz-body">
+                    <div class="dz-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="12" y1="18" x2="12" y2="12"/>
+                            <line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/>
+                        </svg>
+                    </div>
+                    <span class="dz-cta">Drop PDF here or <u>browse files</u></span>
+                    <span class="dz-hint" id="fn">Supports PDF only</span>
+                </div>
+                <input id="rf" type="file" name="resume_pdf" accept=".pdf"
+                       style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+            </label>
+
+            <button class="btn" type="submit" style="width:100%; margin-top:12px; padding:11px;">
+                Analyse Resume
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+            </button>
+        </form>
+        {% endif %}
+
+        <!-- Feature pills (always shown) -->
+        <div class="feat-grid">
+            <div class="feat-item">
+                <div class="feat-ic">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                </div>
+                <span>AI role detection</span>
+            </div>
+            <div class="feat-item">
+                <div class="feat-ic">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <span>Remote job matching</span>
+            </div>
+            <div class="feat-item">
+                <div class="feat-ic">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </div>
+                <span>Skills extraction</span>
+            </div>
+            <div class="feat-item">
+                <div class="feat-ic">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <span>100% private</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── RIGHT: Assessment panel ── -->
+    <div class="rp-assess">
+
+        {% if current_user.resume_text and current_user.resume_text|trim %}
+
+        <!-- ─ Score ring + overview ─ -->
+        <div class="card assess-top">
+            <div class="assess-score-wrap">
+                <!-- SVG ring gauge -->
+               <svg class="ring-svg" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" stroke-width="7"/>
+    {% set current_score = parsed.match_score if parsed else 0 %}
+    {# 251.2 is the circumference. Offset = 251.2 * (1 - score/100) #}
+    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--accent)" stroke-width="7"
+            stroke-linecap="round"
+            stroke-dasharray="251.2"
+            stroke-dashoffset="{{ 251.2 * (1 - (current_score / 100)) }}"
+            transform="rotate(-90 50 50)"
+            class="ring-fill"/>
+    <text x="50" y="47" text-anchor="middle" class="ring-num">{{ current_score }}</text>
+    <text x="50" y="58" text-anchor="middle" class="ring-label">Score</text>
+</svg>
+                <div class="assess-summary">
+                    <div class="assess-name">{{ current_user.name or 'Your Resume' }}</div>
+                    <div class="assess-role-pill">{{ current_user.inferred_role or 'Software Engineer' }}</div>
+                    <p class="assess-blurb">Strong profile with solid technical depth. A few additions could significantly boost match quality.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─ Strength bars ─ -->
+        <div class="card" style="padding:20px;">
+            <div class="section-title">Profile Strength</div>
+            <div class="bar-list">
+                <div class="bar-row">
+                    <span class="bar-lbl">Technical Skills</span>
+                    <div class="bar-track"><div class="bar-fill" style="width:88%; --bc:var(--accent);"></div></div>
+                    <span class="bar-pct">88%</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-lbl">Experience</span>
+                    <div class="bar-track"><div class="bar-fill" style="width:72%; --bc:#2a7a3b;"></div></div>
+                    <span class="bar-pct">72%</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-lbl">Keywords</span>
+                    <div class="bar-track"><div class="bar-fill" style="width:65%; --bc:#7c5cbf;"></div></div>
+                    <span class="bar-pct">65%</span>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-lbl">Formatting</span>
+                    <div class="bar-track"><div class="bar-fill" style="width:80%; --bc:#c2820a;"></div></div>
+                    <span class="bar-pct">80%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─ Parsed resume content ─ -->
+        <div class="card" style="padding:20px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div class="section-title" style="margin-bottom:0;">Extracted Content</div>
+                <span class="muted" style="font-size:11px;">From your PDF</span>
+            </div>
+            <div class="resume-scroll">{{ current_user.resume_text }}</div>
+        </div>
+
+        <!-- ─ Suggestions ─ -->
+        <div class="card" style="padding:20px;">
+            <div class="section-title">💡 Quick Wins</div>
+            <div class="sugg-list">
+                <div class="sugg-item sugg-warn">
+                    <div class="sugg-icon">⚠</div>
+                    <div>
+                        <div class="sugg-head">Add a LinkedIn URL</div>
+                        <div class="sugg-body">Recruiters are 3× more likely to shortlist profiles with an active LinkedIn link.</div>
+                    </div>
+                </div>
+                <div class="sugg-item sugg-tip">
+                    <div class="sugg-icon">✦</div>
+                    <div>
+                        <div class="sugg-head">Quantify achievements</div>
+                        <div class="sugg-body">Replace task descriptions with measurable impact (e.g. "reduced load time by 40%").</div>
+                    </div>
+                </div>
+                <div class="sugg-item sugg-ok">
+                    <div class="sugg-icon">✓</div>
+                    <div>
+                        <div class="sugg-head">Technical skills section</div>
+                        <div class="sugg-body">Well structured. Your stack aligns with current remote job demand.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─ Continue CTA (sticky at bottom) ─ -->
+        <a href="/jobs" class="btn btn-continue btn-continue-bottom">
+            View Matched Jobs
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+        </a>
+
+        {% else %}
+
+        <!-- ─ Empty assessment state ─ -->
+        <div class="card assess-empty">
+            <div class="ae-graphic">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="9" y1="13" x2="15" y2="13"/>
+                    <line x1="9" y1="17" x2="13" y2="17"/>
+                </svg>
+            </div>
+            <div class="ae-title">No resume yet</div>
+            <p class="ae-sub">Upload your PDF on the left. We'll instantly<br>score it, extract your skills, and surface<br>the best remote roles for you.</p>
+
+            <div class="ae-steps">
+                <div class="ae-step">
+                    <span class="ae-num">1</span>
+                    <span>Upload your PDF resume</span>
+                </div>
+                <div class="ae-step-arrow">↓</div>
+                <div class="ae-step">
+                    <span class="ae-num">2</span>
+                    <span>AI analyses & scores it</span>
+                </div>
+                <div class="ae-step-arrow">↓</div>
+                <div class="ae-step">
+                    <span class="ae-num">3</span>
+                    <span>Browse matched remote jobs</span>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+
+<!-- ══════════════ STYLES ══════════════ -->
+<style>
+
+/* Layout */
+.rp-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* ── Upload card ── */
+.rp-upload { display: flex; flex-direction: column; gap: 0; }
+
+.upload-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.upload-icon-wrap {
+    width: 40px; height: 40px; border-radius: 9px; flex-shrink: 0;
+    background: var(--a12); border: 1px solid var(--a25);
+    display: grid; place-items: center; color: var(--accent);
+}
+.upload-title { font-size: 14px; font-weight: 600; color: var(--dark); letter-spacing: -0.01em; }
+
+/* Drop zone */
+.dz {
+    display: block; position: relative;
+    border: 1.5px dashed rgba(0,0,0,0.11);
+    border-radius: var(--rs); background: var(--bg);
+    transition: border-color 0.18s, background 0.18s; cursor: pointer;
+}
+.dz:hover, .dz.over { border-color: var(--accent); background: var(--a12); }
+.dz:hover .dz-icon svg { stroke: var(--accent); }
+.dz-body {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 20px; gap: 6px; text-align: center; pointer-events: none;
+}
+.dz-icon { margin-bottom: 4px; }
+.dz-icon svg { stroke: var(--fg3); transition: stroke 0.18s; }
+.dz-cta { font-size: 13px; font-weight: 500; color: var(--fg); }
+.dz-cta u { color: var(--accent); text-decoration-color: var(--accent); }
+.dz-hint { font-size: 11px; color: var(--fg3); }
+
+/* Attached state */
+.att-header {
+    display: flex; align-items: center; gap: 11px; margin-bottom: 16px;
+}
+.att-icon {
+    width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+    background: var(--a12); border: 1px solid var(--a25);
+    display: grid; place-items: center; color: var(--accent);
+}
+.att-title { font-size: 14px; font-weight: 600; color: var(--dark); }
+.att-sub   { font-size: 11.5px; color: var(--fg2); margin-top: 2px; }
+.att-check {
+    margin-left: auto; width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(42,122,59,0.12); border: 1px solid rgba(42,122,59,0.22);
+    display: grid; place-items: center; color: #2a7a3b; flex-shrink: 0;
+}
+
+.role-detected {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: var(--rs); padding: 10px 14px; margin-bottom: 14px;
+}
+.role-label { font-size: 11px; color: var(--fg2); font-weight: 500; }
+.role-value { font-size: 13px; font-weight: 700; color: var(--dark); letter-spacing: -0.01em; }
+
+.att-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+
+/* Buttons */
+.btn-sm { padding: 8px 12px; font-size: 12px; }
+.btn-ghost {
+    background: transparent; color: var(--fg);
+    border: 1px solid var(--line); display: inline-flex;
+    align-items: center; justify-content: center; gap: 6px;
+}
+.btn-ghost:hover { background: var(--bg2); border-color: rgba(0,0,0,0.14); box-shadow: none; }
+.btn-danger {
+    background: transparent; color: #c0392b;
+    border: 1px solid rgba(192,57,43,0.2);
+    display: inline-flex; align-items: center;
+    justify-content: center; gap: 6px;
+}
+.btn-danger:hover { background: rgba(192,57,43,0.07); box-shadow: none; transform: none; }
+
+.btn-continue {
+    width: 100%; padding: 12px; font-size: 14px; font-weight: 700;
+    background: var(--dark); letter-spacing: -0.01em;
+    border-radius: var(--rs); justify-content: center;
+    margin-bottom: 0;
+}
+.btn-continue:hover {
+    background: var(--accent);
+    box-shadow: 0 4px 18px var(--a25);
+}
+.btn-continue-bottom {
+    margin-top: 4px;
+}
+
+.section-divider {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 16px; padding-top: 16px;
+    border-top: 1px solid var(--line);
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--fg3);
+}
+
+/* Feature pills */
+.feat-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-top: 14px;
+}
+.feat-item {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: var(--rs); padding: 8px 10px;
+    font-size: 11.5px; font-weight: 500; color: var(--fg2);
+}
+.feat-ic {
+    width: 26px; height: 26px; border-radius: 6px;
+    background: var(--a12); display: grid; place-items: center;
+    color: var(--accent); flex-shrink: 0;
+}
+
+/* ── Assessment panel ── */
+.rp-assess { display: flex; flex-direction: column; gap: 14px; }
+
+.assess-top { padding: 20px; }
+.assess-score-wrap { display: flex; align-items: center; gap: 18px; }
+.ring-svg { width: 88px; height: 88px; flex-shrink: 0; }
+.ring-fill { transition: stroke-dashoffset 1s cubic-bezier(0.23,1,0.32,1); }
+.ring-num  { font-family:'Geist',sans-serif; font-size: 22px; font-weight: 700; fill: var(--dark); }
+.ring-label { font-size: 8px; fill: var(--fg3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.assess-name  { font-size: 15px; font-weight: 700; color: var(--dark); letter-spacing: -0.02em; }
+.assess-role-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--a12); color: var(--accent);
+    border: 1px solid var(--a25); padding: 3px 10px;
+    border-radius: 20px; font-size: 11px; font-weight: 600;
+    margin: 6px 0 8px;
+}
+.assess-blurb { font-size: 12px; color: var(--fg2); line-height: 1.55; }
+
+/* Strength bars */
+.section-title {
+    font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--fg2); margin-bottom: 14px;
+}
+.bar-list { display: flex; flex-direction: column; gap: 11px; }
+.bar-row { display: flex; align-items: center; gap: 10px; }
+.bar-lbl { font-size: 12px; font-weight: 500; color: var(--fg); width: 110px; flex-shrink: 0; }
+.bar-track {
+    flex: 1; height: 5px; background: var(--bg2);
+    border-radius: 10px; overflow: hidden;
+}
+.bar-fill {
+    height: 100%; background: var(--bc, var(--accent));
+    border-radius: 10px;
+    animation: barIn 1s cubic-bezier(0.23,1,0.32,1) both;
+}
+@keyframes barIn { from { width: 0 !important; } }
+.bar-pct { font-size: 11px; font-weight: 600; color: var(--fg2); width: 32px; text-align: right; }
+
+/* Resume scroll */
+.resume-scroll {
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: var(--rs); padding: 14px 16px;
+    max-height: 200px; overflow-y: auto;
+    font-size: 12px; line-height: 1.7; color: var(--fg);
+    white-space: pre-wrap;
+}
+
+/* Suggestions */
+.sugg-list { display: flex; flex-direction: column; gap: 10px; }
+.sugg-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 13px; border-radius: var(--rs);
+    border: 1px solid transparent;
+}
+.sugg-warn { background: rgba(194,130,10,0.07); border-color: rgba(194,130,10,0.18); }
+.sugg-tip  { background: rgba(124,92,191,0.07); border-color: rgba(124,92,191,0.18); }
+.sugg-ok   { background: rgba(42,122,59,0.07);  border-color: rgba(42,122,59,0.18); }
+.sugg-icon {
+    font-size: 12px; font-weight: 700; margin-top: 1px;
+    flex-shrink: 0; width: 18px;
+}
+.sugg-warn .sugg-icon { color: #c2820a; }
+.sugg-tip  .sugg-icon { color: #7c5cbf; }
+.sugg-ok   .sugg-icon { color: #2a7a3b; }
+.sugg-head { font-size: 12.5px; font-weight: 600; color: var(--dark); margin-bottom: 2px; }
+.sugg-body { font-size: 11.5px; color: var(--fg2); line-height: 1.5; }
+
+/* Empty assessment */
+.assess-empty {
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; padding: 48px 32px;
+}
+.ae-graphic {
+    width: 72px; height: 72px; border-radius: 18px; margin-bottom: 18px;
+    background: var(--bg); border: 1px solid var(--line);
+    display: grid; place-items: center; color: var(--fg3);
+}
+.ae-title { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 8px; }
+.ae-sub { font-size: 13px; color: var(--fg2); line-height: 1.65; margin-bottom: 28px; }
+.ae-steps { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ae-step {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12.5px; color: var(--fg); font-weight: 500;
+}
+.ae-num {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    background: var(--a12); border: 1px solid var(--a25);
+    display: grid; place-items: center;
+    font-size: 10px; font-weight: 700; color: var(--accent);
+}
+.ae-step-arrow { font-size: 14px; color: var(--fg3); }
+
+</style>
+
+<script>
+(function () {
+    const dz  = document.getElementById('dz');
+    const inp = document.getElementById('rf');
+    const fn  = document.getElementById('fn');
+    if (!dz || !inp) return;
+
+    inp.addEventListener('change', () => {
+        fn.textContent = inp.files[0]?.name || 'Supports PDF only';
+        fn.style.color = 'var(--accent)';
+    });
+
+    dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('over');
+        const file = e.dataTransfer?.files[0];
+        if (file && file.type === 'application/pdf') {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            inp.files = dt.files;
+            fn.textContent = file.name;
+            fn.style.color = 'var(--accent)';
+        }
+    });
+})();
+</script>
+
+{% endblock %}

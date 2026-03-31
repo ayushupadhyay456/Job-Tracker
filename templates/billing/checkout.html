@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="checkout-page">
+
+  <div class="checkout-icon">
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="24" cy="24" r="24" fill="#E6F1FB"/>
+      <path d="M14 24h20M28 18l6 6-6 6" stroke="#185FA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <h1>Complete your payment</h1>
+  <p>You're signing up for the <strong>{{ plan | capitalize }}</strong> plan.</p>
+  <p class="note">Click the button below to open the secure payment window.</p>
+
+  <button id="pay-btn" class="btn btn-primary">Pay with Razorpay</button>
+  <p id="pay-error" class="error-msg" style="display:none; color:#ef4444; margin-top:12px;"></p>
+
+</section>
+
+<!-- Razorpay JS SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  const btn = document.getElementById('pay-btn');
+
+  btn.addEventListener('click', function () {
+    btn.disabled = true;
+    btn.textContent = 'Opening payment…';
+
+    const options = {
+      key:             "{{ razorpay_key }}",
+      subscription_id: "{{ subscription_id }}",
+      name:            "JobTracker",
+      description:     "{{ plan | capitalize }} subscription",
+      prefill: {
+        name:  "{{ user_name }}",
+        email: "{{ user_email }}",
+      },
+      theme: { color: "#185FA5" },
+
+      handler: function (response) {
+        // Payment succeeded — verify on server
+        fetch('/billing/verify', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_subscription_id: response.razorpay_subscription_id,
+            razorpay_payment_id:      response.razorpay_payment_id,
+            razorpay_signature:       response.razorpay_signature,
+          }),
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            window.location.href = data.redirect;
+          } else {
+            showError('Payment verification failed. Contact support.');
+          }
+        })
+        .catch(() => showError('Network error. Please try again.'));
+      },
+
+      modal: {
+        ondismiss: function () {
+          btn.disabled    = false;
+          btn.textContent = 'Pay with Razorpay';
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function (resp) {
+      showError('Payment failed: ' + resp.error.description);
+      btn.disabled    = false;
+      btn.textContent = 'Try again';
+    });
+    rzp.open();
+  });
+
+  function showError(msg) {
+    const el = document.getElementById('pay-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+</script>
+
+<style>
+  .checkout-page {
+    max-width: 480px;
+    margin: 80px auto;
+    text-align: center;
+    padding: 0 24px;
+  }
+  .checkout-icon { margin-bottom: 24px; }
+  .checkout-page h1 {
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .checkout-page p {
+    color: #6b7280;
+    margin-bottom: 8px;
+    line-height: 1.6;
+  }
+  .checkout-page .note {
+    font-size: 13px;
+    margin-bottom: 28px;
+  }
+  .btn-primary {
+    background: #185FA5;
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .btn-primary:hover { background: #0c447c; }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+</style>
+
+{% endblock %}

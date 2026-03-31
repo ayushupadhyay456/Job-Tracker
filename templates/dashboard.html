@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Recruiter Emails — JobMatch{% endblock %}
+{% block page_title %}Recruiter Emails{% endblock %}
+
+{% block topbar_right %}
+<div style="display:flex;align-items:center;gap:16px;">
+  <span style="font-size:0.85rem;color:var(--mid);">
+    <strong style="color:var(--ink);">{{ leads_count }}</strong> recruiter leads
+    &nbsp;·&nbsp;
+    <strong style="color:var(--ink);">{{ jobs|length }}</strong> total emails
+  </span>
+  <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#e2f5ec;color:#1a7a4a;border-radius:8px;font-size:0.82rem;font-weight:500;">
+    <span style="width:7px;height:7px;border-radius:50%;background:#1a9e5c;display:inline-block;animation:pulse 2s infinite;"></span>
+    Monitor running
+  </span>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; }
+  .stat-card .label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mid); margin-bottom: 6px; }
+  .stat-card .value { font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+
+  .email-table { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .email-table table { width: 100%; border-collapse: collapse; }
+  .email-table th { text-align: left; padding: 14px 20px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mid); background: #faf7f3; border-bottom: 1px solid var(--border); font-weight: 500; }
+  .email-table td { padding: 15px 20px; border-bottom: 1px solid #f0ebe3; font-size: 0.88rem; vertical-align: middle; }
+  .email-table tr:last-child td { border-bottom: none; }
+  .email-table tr:hover td { background: #fdf9f5; }
+
+  .company-name { font-weight: 500; color: var(--ink); }
+  .subject-text { color: #5a5248; font-size: 0.83rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
+
+  .score-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 100px;
+    font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700;
+  }
+  .score-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  .recruiter-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 100px; font-size: 0.75rem; font-weight: 500; }
+  .recruiter-yes { background: #e2f5ec; color: #1a7a4a; }
+  .recruiter-no  { background: #f0ebe3; color: var(--mid); }
+
+  .date-cell { color: var(--mid); font-size: 0.8rem; white-space: nowrap; }
+
+  .empty-state { text-align: center; padding: 80px 40px; }
+  .empty-state h3 { font-family: 'Syne', sans-serif; font-size: 1.4rem; margin-bottom: 8px; }
+  .empty-state p { color: var(--mid); font-size: 0.9rem; line-height: 1.6; }
+
+  .summary-text { background: #f5f0e8; border-radius: 6px; padding: 6px 10px; font-size: 0.78rem; color: #6a6158; line-height: 1.4; max-width: 380px; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if jobs %}
+  {% set recruiter_jobs = jobs | selectattr('is_recruiter') | list %}
+  {% set avg_score = (jobs | sum(attribute='confidence_score')) // (jobs | length) if jobs else 0 %}
+
+  <div class="summary-row">
+    <div class="stat-card">
+      <div class="label">Total Emails</div>
+      <div class="value">{{ jobs | length }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Recruiter Leads</div>
+      <div class="value" style="color:var(--green)">{{ leads_count }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Avg AI Score</div>
+      <div class="value" style="color:{% if avg_score >= 70 %}var(--green){% elif avg_score >= 40 %}var(--yellow){% else %}#dd4444{% endif %}">{{ avg_score }}%</div>
+    </div>
+  </div>
+
+  <div class="email-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Company / Email</th>
+          <th>Subject</th>
+          <th>Recruiter?</th>
+          <th>AI Score</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+        <tr>
+          <td>
+            <div class="company-name">{{ job.company or '—' }}</div>
+            <div style="font-size:0.78rem;color:var(--mid);">{{ job.email or '' }}</div>
+          </td>
+          <td>
+            <div class="subject-text">{{ job.subject or '—' }}</div>
+            {% if job.ai_summary %}
+            <div class="summary-text">{{ job.ai_summary[:160] }}{% if job.ai_summary|length > 160 %}…{% endif %}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% if job.is_recruiter %}
+            <span class="recruiter-tag recruiter-yes">✓ Recruiter</span>
+            {% else %}
+            <span class="recruiter-tag recruiter-no">Other</span>
+            {% endif %}
+          </td>
+          <td>
+            {% set s = job.confidence_score %}
+            <span class="score-pill" style="background:{% if s >= 70 %}#e2f5ec{% elif s >= 40 %}#fef3d0{% else %}#fdeaea{% endif %};">
+              <span class="score-dot" style="background:{% if s >= 70 %}var(--green){% elif s >= 40 %}var(--yellow){% else %}#dd4444{% endif %};"></span>
+              <span style="color:{% if s >= 70 %}var(--green){% elif s >= 40 %}#b07800{% else %}#dd4444{% endif %};">{{ s }}%</span>
+            </span>
+          </td>
+          <td class="date-cell">
+            {{ job.last_activity.strftime('%b %d, %Y') if job.last_activity else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% else %}
+  <div class="empty-state">
+    <h3>No emails analysed yet</h3>
+    <p>The Gmail monitor is running in the background.<br>
+       It polls every 2 minutes — new recruiter emails will appear here automatically.</p>
+  </div>
+{% endif %}
+{% endblock %}

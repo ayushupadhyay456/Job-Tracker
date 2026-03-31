@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="change-plan-page">
+
+  <h1>Downgrade to Free?</h1>
+  <p>You'll lose access to your current plan's features immediately.</p>
+  <p class="note">
+    This only updates your account here. If you have an active Razorpay subscription,
+    please cancel it via the link in your Razorpay confirmation email to stop future charges.
+  </p>
+
+  <div class="actions">
+    <form method="POST" action="{{ url_for('billing.change_plan') }}">
+      <button type="submit" class="btn btn-danger">Yes, downgrade to Free</button>
+    </form>
+    <a href="{{ url_for('pricing') }}" class="btn btn-outline">Cancel</a>
+  </div>
+
+</section>
+
+<style>
+  .change-plan-page {
+    max-width: 480px;
+    margin: 80px auto;
+    text-align: center;
+    padding: 0 24px;
+  }
+  .change-plan-page h1 {
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .change-plan-page p {
+    color: #6b7280;
+    margin-bottom: 8px;
+    line-height: 1.6;
+  }
+  .change-plan-page .note {
+    font-size: 13px;
+    margin-bottom: 32px;
+  }
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn-danger {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .btn-danger:hover { background: #dc2626; }
+</style>
+
+{% endblock %}

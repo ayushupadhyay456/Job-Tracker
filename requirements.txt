@@ -1,0 +1,36 @@
+# ── Web framework ─────────────────────────────────────────────────────────────
+flask
+flask-login
+flask-sqlalchemy
+flask-migrate
+python-dotenv
+
+# ── MySQL driver ──────────────────────────────────────────────────────────────
+PyMySQL
+cryptography
+
+# ── Google APIs — Gmail + OAuth ───────────────────────────────────────────────
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+
+# ── Gemini AI ─────────────────────────────────────────────────────────────────
+google-genai
+pydantic
+
+# ── PDF parsing ───────────────────────────────────────────────────────────────
+pypdf
+
+# ── HTTP requests (RemoteOK) ──────────────────────────────────────────────────
+requests
+
+# ── Email service (Brevo) ─────────────────────────────────────────────────────
+sib-api-v3-sdk
+
+# ── Scheduling & utilities ────────────────────────────────────────────────────
+apscheduler
+pytz
+pyyaml
+
+
+razorpay

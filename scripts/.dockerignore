@@ -1,0 +1,17 @@
+# Database
+jobs.db
+
+# Google API Keys & Tokens (CRITICAL)
+credentials.json
+token.json
+
+# Environment Variables
+.env
+
+# Python 
+__pycache__/
+*.py[cod]
+venv/
+
+# Docker
+.DS_Store

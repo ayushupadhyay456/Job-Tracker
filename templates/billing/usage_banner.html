@@ -1,0 +1,82 @@
+<!--
+  Usage banner — add this to templates/base.html
+  inside .sidebar-bottom, ABOVE the logout link.
+
+  Shows scores remaining for starter users.
+  Disappears for Pro/Teams users.
+
+  The variables (scores_remaining, score_limit, is_pro)
+  are injected automatically via context_processor in app.py
+-->
+
+{% if current_user.is_authenticated and not is_pro %}
+<div style="
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+">
+  <!-- Plan badge -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <span style="font-size:0.72rem;font-weight:500;color:#5a544c;text-transform:uppercase;letter-spacing:0.08em;">
+      {{ current_user.plan_display }} plan
+    </span>
+    <a href="/pricing" style="font-size:0.7rem;color:var(--accent);text-decoration:none;font-weight:500;">
+      Upgrade →
+    </a>
+  </div>
+
+  <!-- Score usage bar -->
+  <div style="margin-bottom:6px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+      <span style="font-size:0.72rem;color:#5a544c;">AI scores</span>
+      <span style="font-size:0.72rem;color:#888;">
+        {{ scores_used }}/{{ score_limit }} used
+      </span>
+    </div>
+    <div style="background:#2a2a2a;border-radius:4px;height:4px;overflow:hidden;">
+      <div style="
+        width: {{ [((scores_used / score_limit) * 100)|int, 100]|min }}%;
+        height: 100%;
+        background: {% if scores_remaining <= 5 %}#e8451a{% elif scores_remaining <= 10 %}#f0b429{% else %}#1a9e5c{% endif %};
+        border-radius: 4px;
+        transition: width 0.3s;
+      "></div>
+    </div>
+  </div>
+
+  {% if scores_remaining <= 5 %}
+  <p style="font-size:0.7rem;color:var(--accent);margin-top:6px;">
+    Only {{ scores_remaining }} score{{ 's' if scores_remaining != 1 else '' }} left this month.
+    <a href="/pricing" style="color:var(--accent);font-weight:600;">Upgrade for unlimited →</a>
+  </p>
+  {% endif %}
+</div>
+{% endif %}
+
+<!--
+  Also add the plan badge to the user pill in base.html.
+  Replace the existing user-pill div with this:
+-->
+<div class="user-pill">
+  {% if current_user.picture %}
+  <img src="{{ current_user.picture }}" alt="">
+  {% else %}
+  <div style="width:32px;height:32px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#aaa;">
+    {{ current_user.name[0] if current_user.name else '?' }}
+  </div>
+  {% endif %}
+  <div style="min-width:0;">
+    <div class="user-name">{{ current_user.name or 'User' }}</div>
+    <div style="display:flex;align-items:center;gap:5px;margin-top:1px;">
+      <span style="
+        font-size:0.62rem;font-weight:600;
+        padding:1px 6px;border-radius:100px;
+        background:{% if current_user.plan == 'pro' %}rgba(232,69,26,0.15){% elif current_user.plan == 'teams' %}rgba(26,158,92,0.15){% else %}rgba(255,255,255,0.06){% endif %};
+        color:{% if current_user.plan == 'pro' %}var(--accent){% elif current_user.plan == 'teams' %}#1a9e5c{% else %}#5a544c{% endif %};
+        text-transform:uppercase;letter-spacing:0.08em;
+      ">{{ current_user.plan_display }}</span>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}My Applications — JobMatch{% endblock %}
+{% block page_title %}My Applications{% endblock %}
+
+{% block extra_head %}
+<style>
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+  }
+  .stat-card .label {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 6px;
+  }
+  .stat-card .value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .apps-table {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .apps-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .apps-table th {
+    text-align: left;
+    padding: 14px 20px;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mid);
+    background: #faf7f3;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .apps-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0ebe3;
+    font-size: 0.9rem;
+    vertical-align: middle;
+  }
+  .apps-table tr:last-child td { border-bottom: none; }
+  .apps-table tr:hover td { background: #fdf9f5; }
+
+  .job-title-cell { font-weight: 500; color: var(--ink); }
+  .company-cell { color: var(--mid); font-size: 0.85rem; }
+
+  .mini-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .mini-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .applied-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: #e2f5ec;
+    color: var(--green);
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+
+  .empty-apps {
+    text-align: center;
+    padding: 80px 40px;
+    color: var(--mid);
+  }
+  .empty-apps h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.4rem;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .empty-apps a {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 20px;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  .view-link {
+    color: var(--ink);
+    font-size: 0.82rem;
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .view-link:hover { border-color: var(--ink); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if applications %}
+  {% set avg_score = (applications | sum(attribute='confidence_score')) // (applications | length) %}
+  {% set high_match = applications | selectattr('confidence_score', '>=', 70) | list | length %}
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label">Total Applied</div>
+      <div class="value">{{ applications | length }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Avg Match Score</div>
+      <div class="value" style="color:{% if avg_score >= 70 %}var(--green){% elif avg_score >= 40 %}var(--yellow){% else %}#dd4444{% endif %}">{{ avg_score }}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">High Matches (70%+)</div>
+      <div class="value" style="color:var(--green)">{{ high_match }}</div>
+    </div>
+  </div>
+
+  <div class="apps-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Job</th>
+          <th>Company</th>
+          <th>Match Score</th>
+          <th>Applied</th>
+          <th>Link</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+        <tr>
+          <td>
+            <div class="job-title-cell">{{ app.job_title or '—' }}</div>
+            {% if app.score_reasoning %}
+            <div style="font-size:0.78rem;color:var(--mid);margin-top:3px;max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              {{ app.score_reasoning[:120] }}{% if app.score_reasoning|length > 120 %}…{% endif %}
+            </div>
+            {% endif %}
+          </td>
+          <td class="company-cell">{{ app.company or '—' }}</td>
+          <td>
+            {% set s = app.confidence_score %}
+            <span class="mini-score">
+              <span class="mini-dot" style="background:{% if s >= 70 %}var(--green){% elif s >= 40 %}var(--yellow){% else %}#dd4444{% endif %}"></span>
+              {{ s }}%
+            </span>
+          </td>
+          <td style="color:var(--mid);font-size:0.82rem;">
+            {{ app.applied_at.strftime('%b %d, %Y') if app.applied_at else '—' }}
+          </td>
+          <td>
+            {% if app.job_url %}
+            <a href="{{ app.job_url }}" target="_blank" class="view-link">View ↗</a>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% else %}
+  <div class="empty-apps">
+    <h3>No applications yet</h3>
+    <p>Browse remote jobs, score them against your resume, and apply — they'll show up here.</p>
+    <a href="/jobs">Browse Jobs →</a>
+  </div>
+{% endif %}
+{% endblock %}

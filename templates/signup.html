@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up — PathHire</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0f0e0d; --paper: #faf8f5; --accent: #c8511a;
+            --serif: 'DM Serif Display', serif; --sans: 'DM Sans', sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--paper); color: var(--ink); font-family: var(--sans); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+        .form-shell { width: 100%; max-width: 420px; padding: 40px; background: white; border: 1px solid #ddd6c9; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .form-title { font-family: var(--serif); font-size: 32px; margin-bottom: 8px; text-align: center; }
+        .form-title span { color: var(--accent); font-style: italic; }
+        .form-sub { color: #8a8278; font-size: 14px; margin-bottom: 32px; text-align: center; }
+        .btn-google { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 14px; background: var(--ink); color: var(--paper); border-radius: 12px; font-size: 15px; font-weight: 500; text-decoration: none; margin-bottom: 24px; transition: opacity 0.2s; }
+        .btn-google:hover { opacity: 0.85; }
+        .divider { display: flex; align-items: center; color: #ccc; font-size: 12px; margin: 0 0 24px; }
+        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #eee; margin: 0 10px; }
+        .input-group { text-align: left; margin-bottom: 16px; }
+        .input-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .input-group label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #555; letter-spacing: 0.5px; }
+        .suggest-link { font-size: 11px; color: var(--accent); text-decoration: none; font-weight: 600; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: var(--sans); font-size: 15px; transition: border-color 0.2s; }
+        .input-group input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,81,26,0.08); }
+        .btn-submit { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; margin-top: 10px; transition: background 0.2s; font-family: var(--sans); }
+        .btn-submit:hover { background: #a8411a; }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .footer-note { text-align: center; font-size: 12px; color: #8a8278; margin-top: 16px; }
+        .signin-link { text-align: center; font-size: 13px; color: #8a8278; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+        .signin-link a { color: var(--accent); text-decoration: none; font-weight: 600; }
+        .signin-link a:hover { text-decoration: underline; }
+        .message { padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; border-left: 3px solid; }
+        .message.error { background: #fff0eb; color: #7a240a; border-color: var(--accent); }
+        .message.success { background: #ebf7f1; color: #0e4a2a; border-color: #1a7a4a; }
+        .loading { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: currentColor; margin-left: 4px; animation: blink 1.4s infinite; }
+        @keyframes blink { 0%, 80%, 100% { opacity: 1; } 40% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+<div class="form-shell">
+    <h1 class="form-title">Join <span>PathHire</span></h1>
+    <p class="form-sub">Automate your job search with AI-powered matching.</p>
+
+    <a href="{{ url_for('auth_google') }}" class="btn-google">
+        <svg width="18" height="18" viewBox="0 0 20 20">
+            <path d="M19.6 10.23c0-.68-.06-1.36-.18-2H10v3.79h5.39a4.6 4.6 0 01-2 3.02v2.5h3.23c1.89-1.74 2.98-4.3 2.98-7.31z" fill="#4285F4"/>
+            <path d="M10 20c2.7 0 4.97-.9 6.62-2.43l-3.23-2.5c-.9.6-2.04.96-3.39.96-2.6 0-4.81-1.76-5.6-4.12H1.07v2.58A10 10 0 0010 20z" fill="#34A853"/>
+            <path d="M4.4 11.91A6.02 6.02 0 014.09 10c0-.66.11-1.3.31-1.91V5.51H1.07A10 10 0 000 10c0 1.61.38 3.13 1.07 4.49l3.33-2.58z" fill="#FBBC04"/>
+            <path d="M10 3.97c1.47 0 2.79.5 3.83 1.5l2.86-2.86C14.96.99 12.69 0 10 0A10 10 0 001.07 5.51l3.33 2.58C5.19 5.73 7.4 3.97 10 3.97z" fill="#EA4335"/>
+        </svg>
+        Continue with Google
+    </a>
+
+    <div class="divider">or sign up with email</div>
+    <div id="messageContainer"></div>
+
+    <form id="signupForm">
+        <div class="input-group"><label>Full Name</label><input type="text" name="name" placeholder="John Doe" required></div>
+        <div class="input-group"><label>Email Address</label><input type="email" name="email" placeholder="john@example.com" required></div>
+        <div class="input-group">
+            <div class="input-header"><label>Password</label><a href="javascript:void(0)" class="suggest-link" onclick="suggestPassword()">Suggest Secure Password</a></div>
+            <input type="password" id="password-field" name="password" required>
+        </div>
+        <button type="submit" class="btn-submit" id="submitBtn">Create Account</button>
+    </form>
+    <p class="footer-note">By signing up you agree to our terms. Cancel anytime.</p>
+
+    <p class="signin-link">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+</div>
+
+<script>
+    function showMessage(text, type) {
+        const container = document.getElementById('messageContainer');
+        container.innerHTML = `<div class="message ${type}">${text}</div>`;
+    }
+
+    function suggestPassword() {
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+        const array = new Uint32Array(14);
+        window.crypto.getRandomValues(array);
+        const pwd = Array.from(array).map(n => charset[n % charset.length]).join('');
+        const pwdField = document.getElementById('password-field');
+        pwdField.value = pwd;
+        pwdField.type = "text";
+        setTimeout(() => { pwdField.type = "password"; }, 3000);
+    }
+
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = document.getElementById('submitBtn');
+        const plan = new URLSearchParams(window.location.search).get('plan') || 'monthly';
+        const formData = new FormData(this);
+        const data = {
+            name: formData.get('name').trim(),
+            email: formData.get('email').trim().toLowerCase(),
+            password: formData.get('password')
+        };
+
+        if (!data.name) { showMessage('Please enter your full name.', 'error'); return; }
+        if (data.password.length < 8) { showMessage('Password must be at least 8 characters.', 'error'); return; }
+
+        submitBtn.disabled = true;
+        const originalText = submitBtn.textContent;
+        submitBtn.innerHTML = 'Creating account<span class="loading"></span>';
+
+        try {
+            const response = await fetch(`/api/signup?plan=${plan}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.success && result.redirect_url) {
+                showMessage('✅ Account created! Redirecting to payment...', 'success');
+                setTimeout(() => { window.location.href = result.redirect_url; }, 1000);
+            } else if (response.status === 409) {
+                showMessage('An account with this email already exists. <a href="/login" style="color:#7a240a;font-weight:600;">Sign in instead →</a>', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            } else {
+                showMessage(result.error || 'Signup failed. Please try again.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        } catch (err) {
+            showMessage('Network error. Please check your connection.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    });
+</script>
+</body>
+</html>

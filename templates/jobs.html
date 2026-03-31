@@ -1,0 +1,675 @@
+{% extends "base.html" %}
+{% block title %}Jobs — PathHire{% endblock %}
+
+{% block content %}
+
+<style>
+  /* ── Animations ── */
+  @keyframes fadein  { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes barfill { from { width:0; } to { width: var(--w); } }
+  @keyframes pulse2  { 0%,100%{opacity:1} 50%{opacity:.35} }
+  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+  /* ── Tier borders ── */
+  .tier-plain  { border-color: var(--line); }
+  .tier-plain .btn-apply { background: var(--dark); color:#fff; }
+
+  .tier-warm { border-color: rgba(186,117,23,.35); }
+  .tier-warm::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg,#EF9F27,#BA7517);
+    border-radius:var(--r) 0 0 var(--r);
+  }
+  .tier-warm:hover { box-shadow:0 8px 28px rgba(186,117,23,.18); }
+  .tier-warm .btn-apply { background:linear-gradient(135deg,#BA7517,#EF9F27); color:#fff; }
+  .tier-warm .tweak-box { background:rgba(186,117,23,.06); border-color:rgba(186,117,23,.2); }
+  .tier-warm .tweak-hdr { color:#854F0B; }
+  .tier-warm .tweak-list li::before { color:#BA7517; }
+
+  .tier-good { border-color:rgba(15,110,86,.3); }
+  .tier-good::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg,#1D9E75,#0F6E56);
+    border-radius:var(--r) 0 0 var(--r);
+  }
+  .tier-good:hover { box-shadow:0 8px 28px rgba(15,110,86,.15); }
+  .tier-good .btn-apply { background:linear-gradient(135deg,#085041,#1D9E75); color:#fff; }
+  .tier-good .tweak-box { background:rgba(29,158,117,.06); border-color:rgba(15,110,86,.2); }
+  .tier-good .tweak-hdr { color:#0F6E56; }
+  .tier-good .tweak-list li::before { color:#1D9E75; }
+
+  .tier-top { border-color:rgba(186,117,23,.5); background:rgba(250,238,218,.12); }
+  .tier-top:hover { box-shadow:0 8px 28px rgba(186,117,23,.22); }
+  .tier-top .btn-apply { background:linear-gradient(135deg,#633806,#EF9F27); color:#fff; }
+  .tier-top .tweak-box { background:rgba(186,117,23,.08); border-color:rgba(186,117,23,.28); }
+  .tier-top .tweak-hdr { color:#854F0B; }
+  .tier-top .tweak-list li::before { color:#BA7517; }
+
+  .badge-top {
+    font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    color:#854F0B;background:#FAEEDA;border:1px solid rgba(186,117,23,.4);
+    padding:2px 7px;border-radius:5px;display:inline-flex;align-items:center;gap:3px;
+  }
+  .badge-top::before { content:'★'; font-size:8px; }
+
+  /* ── Page header ── */
+  .ph { margin-bottom:28px; }
+  .ph-eye {
+    font-size:10px; font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--accent);
+    display:flex; align-items:center; gap:6px; margin-bottom:8px;
+  }
+  .ph-eye::before {
+    content:''; display:block; width:14px; height:1.5px;
+    background:var(--accent); border-radius:2px;
+  }
+  .ph-title {
+    font-size:28px; font-weight:700; letter-spacing:-.035em;
+    color:var(--dark); line-height:1.15; margin-bottom:6px;
+  }
+  .ph-sub { font-size:13px; color:var(--fg2); }
+
+  /* ── Meta strip ── */
+  .meta-strip {
+    display:flex; align-items:center; gap:16px;
+    margin-bottom:24px; flex-wrap:wrap;
+  }
+  .meta-strip .count-big { font-size:20px; font-weight:700; letter-spacing:-.04em; color:var(--dark); }
+  .meta-strip .sep { width:1px; height:20px; background:var(--line); }
+  .live-pill {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    color:#1f7a3b; background:rgba(31,122,59,.10); border:1px solid rgba(31,122,59,.2);
+    padding:4px 10px; border-radius:20px; margin-left:auto;
+  }
+  .live-dot { width:5px; height:5px; border-radius:50%; background:#1f7a3b; animation:pulse2 2s infinite; }
+
+  /* ── Stat cards ── */
+  .stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+  .stat-card {
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--r); padding:16px 18px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+    transition:box-shadow .2s, transform .18s;
+  }
+  .stat-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.07); transform:translateY(-1px); }
+  .stat-card .slabel { font-size:9.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--fg3); margin-bottom:7px; }
+  .stat-card .sval { font-size:1.8rem; font-weight:700; letter-spacing:-.04em; line-height:1; color:var(--dark); }
+  .stat-card .sdesc { font-size:10.5px; color:var(--fg3); margin-top:4px; }
+
+  /* ── Filters ── */
+  .filters-row { display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+  .search-wrap {
+    display:flex; align-items:center; gap:7px;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:100px; padding:7px 13px;
+    flex:1; max-width:240px; transition:border-color .15s, box-shadow .15s;
+  }
+  .search-wrap:focus-within { border-color:var(--a25); box-shadow:0 0 0 3px rgba(217,82,21,.07); }
+  .search-wrap svg { width:13px; height:13px; stroke:var(--fg3); fill:none; stroke-width:2; stroke-linecap:round; flex-shrink:0; }
+  .search-wrap input { border:none; outline:none; background:transparent; font-family:'Geist',sans-serif; font-size:12.5px; color:var(--fg); width:100%; }
+  .search-wrap input::placeholder { color:var(--fg3); }
+
+  .fchip {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:6px 13px; border-radius:100px;
+    border:1px solid var(--line); background:var(--surface);
+    font-family:'Geist',sans-serif; font-size:11.5px; font-weight:500;
+    color:var(--fg2); cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .fchip:hover   { border-color:var(--a25); background:var(--a12); color:var(--accent); }
+  .fchip.active  { border-color:var(--a25); background:var(--a12); color:var(--accent); font-weight:600; }
+  .fchip svg { width:10px; height:10px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; }
+  .res-count { font-size:11.5px; color:var(--fg3); margin-left:auto; white-space:nowrap; }
+
+  /* ── Job grid ── */
+  .g-auto { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+
+  /* ── Job card ── */
+  .jcard {
+    background:var(--surface);
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:20px;
+    display:flex; flex-direction:column;
+    box-shadow:0 1px 4px rgba(0,0,0,.04), 0 0 0 0 rgba(217,82,21,0);
+    transition:box-shadow .22s, border-color .2s, transform .18s;
+    position:relative; cursor:default;
+    animation:fadein .4s ease both;
+  }
+  .jcard:hover {
+    box-shadow:0 8px 28px rgba(0,0,0,.10), 0 0 0 0 rgba(217,82,21,0);
+    border-color:rgba(0,0,0,.12);
+    transform:translateY(-2px);
+  }
+
+  /* card top */
+  .card-top {
+    display:flex; justify-content:space-between;
+    align-items:flex-start; gap:8px; margin-bottom:14px;
+  }
+  .co-logo-wrap {
+    width:42px; height:42px; border-radius:10px;
+    background:var(--bg); border:1px solid var(--line);
+    display:grid; place-items:center; flex-shrink:0;
+    overflow:hidden; transition:all .18s;
+  }
+  .jcard:hover .co-logo-wrap { background:var(--a12); border-color:var(--a25); }
+  .co-init {
+    font-size:16px; font-weight:700; color:var(--fg2);
+    transition:color .18s;
+  }
+  .jcard:hover .co-init { color:var(--accent); }
+
+  .card-badges { display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  .remote-tag {
+    font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.07em;
+    color:#1f7a3b; background:rgba(31,122,59,.09); border:1px solid rgba(31,122,59,.18);
+    padding:3px 8px; border-radius:5px;
+  }
+  .saved-tag {
+    font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.07em;
+    color:var(--accent); background:var(--a12); border:1px solid var(--a25);
+    padding:3px 8px; border-radius:5px; display:none;
+  }
+  .jcard.is-saved .saved-tag { display:inline; }
+
+  /* title / company */
+  .job-title {
+    font-size:14.5px; font-weight:650; letter-spacing:-.02em;
+    color:var(--dark); line-height:1.3; margin-bottom:3px;
+  }
+  .job-co { font-size:12px; color:var(--fg2); font-weight:500; margin-bottom:13px; }
+
+  /* meta pills */
+  .meta-pills { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px; }
+  .mpill {
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:10.5px; color:var(--fg2);
+    background:var(--bg); border:1px solid var(--line);
+    padding:3px 9px; border-radius:100px;
+    transition:border-color .15s;
+  }
+  .mpill svg { width:9px; height:9px; stroke:var(--fg3); fill:none; stroke-width:2; stroke-linecap:round; flex-shrink:0; }
+  .mpill.warn { background:rgba(201,48,48,.08); border-color:rgba(201,48,48,.2); color:#c03030; }
+  .mpill.warn svg { stroke:#c03030; }
+
+  /* match bar */
+  .match-wrap { margin-bottom:14px; }
+  .match-top {
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:10px; font-weight:600; letter-spacing:.07em;
+    text-transform:uppercase; margin-bottom:6px;
+  }
+  .match-lbl { color:var(--fg3); }
+  .match-pct { color:var(--dark); }
+  .match-track {
+    height:4px; background:var(--bg);
+    border:1px solid var(--line); border-radius:4px; overflow:hidden;
+  }
+  .match-fill {
+    height:100%; border-radius:4px;
+    animation:barfill .9s cubic-bezier(.23,1,.32,1) forwards;
+  }
+
+  /* tweak box — improved */
+  .tweak-box {
+    background:linear-gradient(135deg, rgba(217,82,21,.05), rgba(217,82,21,.02));
+    border:1px solid rgba(217,82,21,.15);
+    border-radius:10px;
+    padding:11px 13px;
+    margin-bottom:14px;
+  }
+  .tweak-hdr {
+    display:flex; align-items:center; gap:5px;
+    font-size:9.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--accent); margin-bottom:8px;
+  }
+  .tweak-hdr svg { width:10px; height:10px; stroke:var(--accent); fill:none; stroke-width:2.2; stroke-linecap:round; }
+  .tweak-list { list-style:none; display:flex; flex-direction:column; gap:6px; }
+  .tweak-list li {
+    display:flex; align-items:flex-start; gap:7px;
+    font-size:11px; color:var(--fg); line-height:1.5;
+  }
+  .tweak-list li::before {
+    content:'→'; color:var(--accent);
+    font-size:10px; flex-shrink:0; margin-top:1px;
+  }
+  .tweak-more {
+    font-size:10.5px; font-weight:600; color:var(--accent);
+    background:none; border:none; cursor:pointer;
+    font-family:'Geist',sans-serif; padding:0; margin-top:6px;
+    display:flex; align-items:center; gap:3px;
+  }
+  .tweak-more svg { width:9px; height:9px; stroke:var(--accent); fill:none; stroke-width:2.5; stroke-linecap:round; transition:transform .2s; }
+  .tweak-more.open svg { transform:rotate(180deg); }
+  .tweak-extra { display:none; }
+  .tweak-extra.open { display:block; }
+
+  /* salary badge */
+  .salary-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:11px; font-weight:600; color:#1D6E47;
+    background:rgba(29,110,71,.08); border:1px solid rgba(29,110,71,.18);
+    padding:3px 9px; border-radius:6px; margin-bottom:12px;
+  }
+  .salary-badge svg { width:10px; height:10px; stroke:#1D6E47; fill:none; stroke-width:2; stroke-linecap:round; flex-shrink:0; }
+
+  /* divider */
+  .card-div { height:1px; background:var(--line); margin:0 0 14px; }
+
+  /* actions */
+  .card-actions { display:flex; gap:8px; margin-top:auto; }
+  .btn-apply {
+    flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:10px 0; background:var(--dark); color:#fff;
+    border:none; border-radius:9px;
+    font-family:'Geist',sans-serif; font-size:13px; font-weight:600;
+    cursor:pointer; text-decoration:none;
+    transition:background .16s, transform .12s, box-shadow .16s;
+  }
+  .btn-apply:hover { background:var(--accent); box-shadow:0 4px 14px var(--a25); transform:translateY(-1px); }
+  .btn-apply:active { transform:scale(0.97); }
+  .btn-apply svg { width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; }
+
+  .btn-save {
+    width:40px; height:40px;
+    display:grid; place-items:center;
+    border:1.5px solid var(--line); border-radius:9px;
+    background:var(--surface); cursor:pointer;
+    transition:all .15s; flex-shrink:0;
+  }
+  .btn-save:hover { border-color:var(--a25); background:var(--a12); }
+  .btn-save.active { border-color:var(--a25); background:var(--a12); }
+  .btn-save svg { width:14px; height:14px; stroke:var(--fg3); fill:none; stroke-width:2; stroke-linecap:round; transition:stroke .15s,fill .15s; }
+  .btn-save.active svg { stroke:var(--accent); fill:var(--accent); }
+
+  /* ── Empty states ── */
+  .empty-state {
+    grid-column:1/-1; text-align:center; padding:80px 40px;
+    background:var(--surface); border-radius:var(--r);
+    border:1px dashed var(--line);
+  }
+  .empty-state-icon {
+    width:52px; height:52px; border-radius:14px;
+    background:var(--bg); border:1px solid var(--line);
+    display:grid; place-items:center; margin:0 auto 16px;
+  }
+  .empty-state-icon svg { width:22px; height:22px; stroke:var(--fg3); fill:none; stroke-width:1.6; stroke-linecap:round; }
+  .empty-state h3 { font-size:1.25rem; font-weight:700; letter-spacing:-.03em; color:var(--dark); margin-bottom:8px; }
+  .empty-state p { color:var(--fg2); font-size:13px; line-height:1.7; margin-bottom:20px; }
+  .empty-state .btn-go {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:10px 20px; border-radius:9px;
+    background:var(--dark); color:#fff;
+    font-family:'Geist',sans-serif; font-size:13px; font-weight:600;
+    text-decoration:none; transition:background .16s, transform .12s;
+  }
+  .empty-state .btn-go:hover { background:var(--accent); transform:translateY(-1px); }
+
+  /* No-resume upload prompt */
+  .no-resume-prompt {
+    grid-column:1/-1; text-align:center; padding:64px 32px;
+    background:var(--surface); border-radius:var(--r);
+    border:1.5px dashed rgba(217,82,21,.25);
+    background:linear-gradient(135deg,rgba(217,82,21,.03),rgba(217,82,21,.01));
+  }
+  .no-resume-prompt .nrp-icon {
+    width:56px; height:56px; border-radius:16px;
+    background:var(--a12); border:1px solid var(--a25);
+    display:grid; place-items:center; margin:0 auto 18px;
+  }
+  .no-resume-prompt .nrp-icon svg { width:24px; height:24px; stroke:var(--accent); fill:none; stroke-width:1.6; stroke-linecap:round; }
+  .no-resume-prompt h3 { font-size:1.2rem; font-weight:700; letter-spacing:-.03em; color:var(--dark); margin-bottom:8px; }
+  .no-resume-prompt p { color:var(--fg2); font-size:13px; line-height:1.65; max-width:380px; margin:0 auto 22px; }
+  .no-resume-prompt .btn-upload {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:11px 22px; border-radius:9px;
+    background:var(--accent); color:#fff;
+    font-family:'Geist',sans-serif; font-size:13px; font-weight:600;
+    text-decoration:none; transition:background .16s, transform .12s, box-shadow .16s;
+  }
+  .no-resume-prompt .btn-upload:hover { background:#b83f0f; box-shadow:0 4px 14px var(--a25); transform:translateY(-1px); }
+
+  /* stagger card animation */
+  .jcard:nth-child(1)  { animation-delay:.03s; }
+  .jcard:nth-child(2)  { animation-delay:.06s; }
+  .jcard:nth-child(3)  { animation-delay:.09s; }
+  .jcard:nth-child(4)  { animation-delay:.12s; }
+  .jcard:nth-child(5)  { animation-delay:.15s; }
+  .jcard:nth-child(6)  { animation-delay:.18s; }
+  .jcard:nth-child(7)  { animation-delay:.21s; }
+  .jcard:nth-child(8)  { animation-delay:.24s; }
+  .jcard:nth-child(9)  { animation-delay:.27s; }
+  .jcard:nth-child(10) { animation-delay:.30s; }
+
+  /* ── Responsive ── */
+  @media (max-width:900px) { .stat-row { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:600px) {
+    .stat-row  { grid-template-columns:repeat(2,1fr); gap:8px; }
+    .g-auto    { grid-template-columns:1fr; }
+    .ph-title  { font-size:22px; }
+    .search-wrap { max-width:100%; }
+  }
+</style>
+
+<!-- ── Page header ── -->
+<div class="ph">
+  <div class="ph-eye">Remote Opportunities</div>
+  <h1 class="ph-title">
+    {% if has_resume and current_user.inferred_role %}
+      Jobs for {{ current_user.inferred_role }}
+    {% else %}
+      Job Dashboard
+    {% endif %}
+  </h1>
+  <p class="ph-sub">
+    {% if has_resume %}
+      Curated matches based on your resume and role preferences
+    {% else %}
+      Upload your resume to get personalised, AI-matched job recommendations
+    {% endif %}
+  </p>
+</div>
+
+<!-- ── Meta strip (only when jobs exist and resume is present) ── -->
+{% if jobs and has_resume %}
+<div class="meta-strip">
+  <span class="count-big">{{ jobs|length }}</span>
+  <span class="muted" style="font-size:12px;font-weight:500;">listings</span>
+  <div class="sep"></div>
+  <span class="muted" style="font-size:12px;">Updated just now</span>
+  <span class="live-pill"><span class="live-dot"></span>Live</span>
+</div>
+
+<!-- ── Stat cards ── -->
+{% set total      = jobs|length %}
+{% set high_match = jobs|selectattr('match_score','defined')|selectattr('match_score','ge',70)|list|length %}
+{% set avg_score  = ((jobs|sum(attribute='match_score')) // total) if total else 0 %}
+{% set saved_ct   = jobs|selectattr('saved','defined')|selectattr('saved')|list|length %}
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="slabel">Total Listings</div>
+    <div class="sval">{{ total }}</div>
+    <div class="sdesc">Remote matches</div>
+  </div>
+  <div class="stat-card">
+    <div class="slabel">High Match</div>
+    <div class="sval" style="color:#1f7a3b;">{{ high_match }}</div>
+    <div class="sdesc">≥ 70% resume fit</div>
+  </div>
+  <div class="stat-card">
+    <div class="slabel">Avg Match</div>
+    <div class="sval" style="color:var(--accent);">{{ avg_score }}%</div>
+    <div class="sdesc">Across all listings</div>
+  </div>
+  <div class="stat-card">
+    <div class="slabel">Saved</div>
+    <div class="sval" id="saved-count-display">{{ saved_ct }}</div>
+    <div class="sdesc">Bookmarked jobs</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Filters (only when has_resume) ── -->
+{% if has_resume and jobs %}
+<div class="filters-row">
+  <div class="search-wrap">
+    <svg viewBox="0 0 14 14"><circle cx="6" cy="6" r="4"/><line x1="9.5" y1="9.5" x2="13" y2="13"/></svg>
+    <input type="text" placeholder="Search title or company…" id="srch" oninput="filterCards()">
+  </div>
+  <button class="fchip active" data-f="all"    onclick="setFilter('all',this)">All</button>
+  <button class="fchip"        data-f="high"   onclick="setFilter('high',this)">
+    <svg viewBox="0 0 10 10"><polyline points="1,8 5,2 9,8"/></svg>High Match
+  </button>
+  <button class="fchip"        data-f="salary" onclick="setFilter('salary',this)">
+    <svg viewBox="0 0 10 10"><rect x="1" y="2" width="8" height="6" rx="1"/><line x1="1" y1="4.5" x2="9" y2="4.5"/></svg>Has Salary
+  </button>
+  <button class="fchip"        data-f="saved"  onclick="setFilter('saved',this)">
+    <svg viewBox="0 0 10 10"><path d="M2 1.5h6v8L5 7.5 2 9.5z"/></svg>Saved
+  </button>
+  <span class="res-count" id="res-count">{{ jobs|length }} listings</span>
+</div>
+{% endif %}
+
+<!-- ── Job cards ── -->
+<div class="g-auto" id="jgrid">
+
+{# ══ NO RESUME — show upload prompt instead of jobs ══ #}
+{% if not has_resume %}
+  <div class="no-resume-prompt">
+    <div class="nrp-icon">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+    </div>
+    <h3>No resume attached</h3>
+    <p>Upload your PDF resume so our AI can score each job against your skills and surface the best-fit remote roles for you.</p>
+    <a href="/resume" class="btn-upload">
+      <svg viewBox="0 0 14 14" style="width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;">
+        <line x1="7" y1="11" x2="7" y2="3"/><polyline points="3,6 7,2 11,6"/><line x1="2" y1="12" x2="12" y2="12"/>
+      </svg>
+      Upload Resume
+    </a>
+  </div>
+
+{# ══ HAS RESUME but no jobs returned ══ #}
+{% elif not jobs %}
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </div>
+    <h3>No listings found yet</h3>
+    <p>We're scanning the web for remote jobs matching your profile.<br>
+       Check back in a few minutes — new matches appear automatically.</p>
+    <a href="/jobs" class="btn-go">
+      <svg viewBox="0 0 14 14" style="width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;"><polyline points="1,7 13,7"/><polyline points="8,2 13,7 8,12"/></svg>
+      Refresh
+    </a>
+  </div>
+
+{# ══ HAS RESUME + jobs ══ #}
+{% else %}
+  {% for job in jobs %}
+  {%- set score   = job.match_score   | default(0) -%}
+  {%- set tweaks  = job.resume_tweaks | default([]) -%}
+  {%- set closing = job.closing_date  | default(None) -%}
+  {%- set soon    = job.closing_soon  | default(False) -%}
+  {%- set salary  = job.salary -%}
+  {%- set saved   = job.saved         | default(False) -%}
+
+  <div class="jcard
+    {% if score >= 80 %}tier-top
+    {% elif score >= 50 %}tier-good
+    {% elif score >= 35 %}tier-warm
+    {% else %}tier-plain{% endif %}
+    {{ 'is-saved' if saved else '' }}"
+    data-score="{{ score }}"
+    data-salary="{{ 'y' if salary else 'n' }}"
+    data-saved="{{ 'y' if saved else 'n' }}"
+    data-title="{{ job.title|lower }}"
+    data-company="{{ job.company|lower }}"
+    data-jobid="{{ job.id | default('') }}">
+
+    <!-- top row -->
+    <div class="card-top">
+      <div class="co-logo-wrap">
+        <span class="co-init">{{ (job.company or '?')[0]|upper }}</span>
+      </div>
+      <div class="card-badges">
+        {% if score >= 80 %}<span class="badge-top">Top Pick</span>{% endif %}
+        <span class="remote-tag">Remote</span>
+        <span class="saved-tag">♥ Saved</span>
+      </div>
+    </div>
+
+    <!-- title / company -->
+    <div class="job-title">{{ job.title or 'Untitled Role' }}</div>
+    <div class="job-co">{{ job.company or 'Unknown Company' }}</div>
+
+    <!-- salary (prominent if present) -->
+    {% if salary %}
+    <div class="salary-badge">
+      <svg viewBox="0 0 10 10"><rect x="1" y="2" width="8" height="6" rx="1"/><line x1="1" y1="4.5" x2="9" y2="4.5"/></svg>
+      ₹{{ '{:,.0f}'.format(salary) }} / yr
+    </div>
+    {% endif %}
+
+    <!-- meta pills -->
+    <div class="meta-pills">
+      {% if job.location %}
+      <span class="mpill">
+        <svg viewBox="0 0 10 10"><path d="M5 1a3 3 0 010 6C3 7 1 5.5 1 4a4 4 0 018 0c0 1.5-2 3-4 6z"/></svg>
+        {{ job.location }}
+      </span>
+      {% endif %}
+      <span class="mpill {{ 'warn' if soon else '' }}">
+        <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/><line x1="5" y1="2.5" x2="5" y2="5.5"/><line x1="5" y1="5.5" x2="7" y2="7"/></svg>
+        {% if closing %}
+          Closes {{ closing.strftime('%b %d') }}{% if soon %} · Soon{% endif %}
+        {% else %}
+          Closes: N/A
+        {% endif %}
+      </span>
+    </div>
+
+    <!-- match bar -->
+    <div class="match-wrap">
+      <div class="match-top">
+        <span class="match-lbl">Resume Match</span>
+        <span class="match-pct">{{ score }}%</span>
+      </div>
+      <div class="match-track">
+        <div class="match-fill" style="
+          --w:{{ score }}%;
+          background:{% if score >= 70 %}#1f7a3b{% elif score >= 40 %}#b07800{% else %}#c03030{% endif %};
+        "></div>
+      </div>
+    </div>
+
+    <!-- tweaks -->
+    <div class="tweak-box">
+      <div class="tweak-hdr">
+        <svg viewBox="0 0 12 12"><path d="M10 2L8 4l2 2-5.5 5.5L2 10l-.5-2.5L7 2z"/></svg>
+        Resume Tweaks
+      </div>
+      {% if tweaks %}
+        <ul class="tweak-list" id="tl-{{ loop.index }}">
+          {% for tw in tweaks[:2] %}<li>{{ tw }}</li>{% endfor %}
+        </ul>
+        {% if tweaks|length > 2 %}
+        <div class="tweak-extra" id="te-{{ loop.index }}">
+          <ul class="tweak-list" style="margin-top:5px;">
+            {% for tw in tweaks[2:] %}<li>{{ tw }}</li>{% endfor %}
+          </ul>
+        </div>
+        <button class="tweak-more" onclick="toggleTweak('te-{{ loop.index }}',this)">
+          +{{ tweaks|length - 2 }} more tips
+          <svg viewBox="0 0 10 10"><polyline points="2,3.5 5,6.5 8,3.5"/></svg>
+        </button>
+        {% endif %}
+      {% else %}
+        <ul class="tweak-list">
+          <li>Mirror keywords from this job's description in your skills section</li>
+          <li>Quantify your impact — add numbers to at least 3 bullet points</li>
+          <li>Open your summary with the exact title: "{{ job.title }}"</li>
+        </ul>
+      {% endif %}
+    </div>
+
+    <div class="card-div"></div>
+
+    <!-- actions -->
+    <div class="card-actions">
+      <a href="{{ job.url or '#' }}" target="_blank" rel="noopener" class="btn-apply">
+        Apply Now
+        <svg viewBox="0 0 11 11"><path d="M1.5 9.5L9.5 1.5M9.5 1.5H4M9.5 1.5V7"/></svg>
+      </a>
+      <button class="btn-save {{ 'active' if saved else '' }}"
+              onclick="toggleSave(this)"
+              title="{{ 'Unsave' if saved else 'Save job' }}">
+        <svg viewBox="0 0 14 14"><path d="M3 2h8v11l-4-2.5L3 13z"/></svg>
+      </button>
+    </div>
+
+  </div>
+  {% endfor %}
+{% endif %}
+
+</div><!-- /g-auto -->
+
+<script>
+  let activeFilter = 'all';
+
+  function setFilter(f, el) {
+    activeFilter = f;
+    document.querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    filterCards();
+  }
+
+  function filterCards() {
+    const q     = (document.getElementById('srch')?.value || '').toLowerCase().trim();
+    const cards = document.querySelectorAll('.jcard');
+    let shown   = 0;
+    cards.forEach(card => {
+      const score   = parseInt(card.dataset.score  || 0);
+      const hasSal  = card.dataset.salary === 'y';
+      const isSaved = card.dataset.saved  === 'y';
+      const title   = card.dataset.title   || '';
+      const co      = card.dataset.company || '';
+
+      const matchQ = !q || title.includes(q) || co.includes(q);
+      const matchF =
+        activeFilter === 'all'    ||
+        (activeFilter === 'high'   && score >= 70) ||
+        (activeFilter === 'salary' && hasSal)      ||
+        (activeFilter === 'saved'  && isSaved);
+
+      card.style.display = (matchQ && matchF) ? '' : 'none';
+      if (matchQ && matchF) shown++;
+    });
+    const rc = document.getElementById('res-count');
+    if (rc) rc.textContent = shown + ' listing' + (shown !== 1 ? 's' : '');
+  }
+
+  /* ── Save toggle — persists via API ── */
+  function toggleSave(btn) {
+    btn.classList.toggle('active');
+    const card    = btn.closest('.jcard');
+    const isSaved = btn.classList.contains('active');
+    card.dataset.saved = isSaved ? 'y' : 'n';
+    card.classList.toggle('is-saved', isSaved);
+    btn.title = isSaved ? 'Unsave' : 'Save job';
+
+    // Update saved count in stat card
+    const display = document.getElementById('saved-count-display');
+    if (display) {
+      const count = document.querySelectorAll('.jcard[data-saved="y"]').length;
+      display.textContent = count;
+    }
+
+    filterCards();
+
+    // Persist to server
+    const jobId = card.dataset.jobid;
+    if (jobId) {
+      fetch('/jobs/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobId, saved: isSaved })
+      }).catch(console.warn);
+    }
+  }
+
+  /* ── Tweak expand ── */
+  function toggleTweak(id, btn) {
+    const extra = document.getElementById(id);
+    extra.classList.toggle('open');
+    btn.classList.toggle('open');
+    const count = extra.querySelectorAll('li').length;
+    btn.childNodes[0].textContent = extra.classList.contains('open')
+      ? 'Show less '
+      : '+' + count + ' more tips ';
+  }
+</script>
+
+{% endblock %}

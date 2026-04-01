@@ -58,6 +58,23 @@
   .empty-state p { color: var(--mid); font-size: 0.9rem; line-height: 1.6; }
 
   .summary-text { background: #f5f0e8; border-radius: 6px; padding: 6px 10px; font-size: 0.78rem; color: #6a6158; line-height: 1.4; max-width: 380px; margin-top: 4px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 700px) {
+    .summary-row { grid-template-columns: 1fr 1fr; }
+    .summary-row .stat-card:last-child { grid-column: span 2; }
+
+    .email-table { overflow-x: auto; border-radius: 10px; }
+    .email-table table { min-width: 580px; }
+    .email-table th, .email-table td { padding: 12px 14px; }
+    .subject-text { max-width: 200px; }
+  }
+
+  @media (max-width: 480px) {
+    .summary-row { grid-template-columns: 1fr; }
+    .summary-row .stat-card:last-child { grid-column: span 1; }
+    .stat-card .value { font-size: 1.8rem; }
+  }
 </style>
 {% endblock %}
 

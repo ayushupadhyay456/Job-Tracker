@@ -344,12 +344,45 @@
   .jcard:nth-child(10) { animation-delay:.30s; }
 
   /* ── Responsive ── */
-  @media (max-width:900px) { .stat-row { grid-template-columns:repeat(2,1fr); } }
-  @media (max-width:600px) {
+  @media (max-width:900px) {
+    .stat-row { grid-template-columns:repeat(2,1fr); }
+  }
+
+  @media (max-width:700px) {
     .stat-row  { grid-template-columns:repeat(2,1fr); gap:8px; }
     .g-auto    { grid-template-columns:1fr; }
     .ph-title  { font-size:22px; }
+    .search-wrap { max-width:100%; flex:1; }
+
+    .filters-row {
+      gap: 6px;
+    }
+    .fchip { font-size:11px; padding:5px 10px; }
+    .res-count { display:none; }
+
+    /* Stack meta strip on mobile */
+    .meta-strip { flex-wrap:wrap; gap:8px; }
+    .meta-strip .sep { display:none; }
+  }
+
+  @media (max-width:480px) {
+    .stat-row { grid-template-columns:1fr 1fr; }
+    .stat-card { padding:12px 14px; }
+    .stat-card .sval { font-size:1.5rem; }
+
+    .filters-row { flex-direction:column; align-items:stretch; }
     .search-wrap { max-width:100%; }
+    .fchip { justify-content:center; }
+    .res-count { display:block; text-align:center; margin-left:0; }
+
+    .job-card { padding:16px; }
+    .card-top { flex-wrap:wrap; }
+    .card-badges { justify-content:flex-start; margin-top:6px; }
+
+    .btn-apply, .btn-score {
+      width:100%;
+      justify-content:center;
+    }
   }
 </style>
 

@@ -57,6 +57,23 @@
   <p style="margin-top: 40px; font-size: 0.85rem; color: var(--mid);">
     All plans start with a 7-day trial. You can cancel via your Gumroad library at any time.
   </p>
+
+  <style>
+    @media (max-width: 700px) {
+      .plans {
+        grid-template-columns: 1fr !important;
+        max-width: 380px;
+        margin: 0 auto;
+      }
+      /* reset the scale(1.05) on featured card on mobile — it causes clipping */
+      .card.plan[style*="scale(1.05)"] { transform: none !important; }
+    }
+    @media (max-width: 480px) {
+      .pricing h1 { font-size: 1.9rem !important; }
+      .pricing .plans { padding: 0 4px; }
+      .card.plan { padding: 24px 20px !important; }
+    }
+  </style>
 </section>
 
 {% endblock %}

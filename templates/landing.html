@@ -111,11 +111,44 @@
         .footer-col ul li a:hover { color: var(--accent-2); }
         .footer-bottom { display: flex; justify-content: space-between; border-top: 1px solid rgba(250,248,245,0.05); padding-top: 24px; color: var(--ink-3); font-size: 12px; }
 
-        @media (max-width: 900px) { 
-            .shell { padding: 30px 24px; } 
-            .footer-grid { grid-template-columns: 1fr 1fr; } 
-            .hero-title { font-size: 42px; } 
-            .plan-card--featured { transform: scale(1); margin: 20px 0; } 
+        @media (max-width: 900px) {
+            .shell { padding: 30px 24px; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+            .hero-title { font-size: 42px; }
+            .plan-card--featured { transform: scale(1); margin: 20px 0; }
+            .plan-card { width: 280px; padding: 36px 24px; }
+        }
+
+        @media (max-width: 680px) {
+            .shell { padding: 24px 18px; }
+            nav { margin-bottom: 50px; }
+            .logo-name { font-size: 17px; }
+
+            .hero { margin-bottom: 60px; }
+            .hero-desc { font-size: 16px; }
+            .btn-nav[style] { padding: 14px 24px !important; font-size: 15px !important; }
+
+            .plans-grid { flex-direction: column; align-items: center; gap: 16px; }
+            .plan-card { width: 100%; max-width: 380px; padding: 32px 22px; }
+            .plan-card--featured { transform: none; }
+
+            .pricing-section { padding: 60px 0; }
+            .footer-grid { grid-template-columns: 1fr 1fr; gap: 28px; }
+            footer { padding: 50px 24px 28px; }
+        }
+
+        @media (max-width: 480px) {
+            nav { flex-wrap: wrap; gap: 12px; }
+            .logo-name { font-size: 16px; }
+
+            .hero-title { font-size: clamp(32px, 9vw, 42px); }
+            .hero-desc { font-size: 15px; }
+
+            .plans-grid { padding: 0 4px; }
+            .plan-card { max-width: 100%; }
+
+            .footer-grid { grid-template-columns: 1fr; gap: 24px; }
+            .footer-bottom { flex-direction: column; gap: 8px; }
         }
     </style>
 </head>

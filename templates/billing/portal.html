@@ -38,6 +38,13 @@
     .portal-actions { display: flex; align-items: center; justify-content: space-between; }
     .btn-danger-text { background: none; border: none; color: #dc2626; font-size: 14px; cursor: pointer; text-decoration: underline; }
     .btn-danger-text:hover { color: #b91c1c; }
+
+    @media (max-width: 600px) {
+        .portal-container { margin: 30px auto; }
+        .portal-card { padding: 24px 18px; border-radius: 12px; }
+        .status-grid { grid-template-columns: 1fr; gap: 16px; }
+        .portal-title { font-size: 20px; }
+    }
 </style>
 
 {% endblock %}

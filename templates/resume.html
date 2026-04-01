@@ -306,6 +306,30 @@
     align-items: start;
 }
 
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .rp-grid {
+        grid-template-columns: 1fr;
+    }
+    .rp-assess {
+        /* On tablet/mobile, assessment comes after upload */
+        order: 2;
+    }
+    .rp-upload {
+        order: 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .feat-grid { grid-template-columns: 1fr; }
+    .assess-score-wrap { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .ring-svg { width: 72px; height: 72px; }
+    .bar-lbl { width: 90px; font-size: 11px; }
+    .att-actions { flex-direction: column; gap: 6px; }
+    .att-actions form { width: 100%; }
+    .assess-empty { padding: 32px 16px; }
+}
+
 /* ── Upload card ── */
 .rp-upload { display: flex; flex-direction: column; gap: 0; }
 

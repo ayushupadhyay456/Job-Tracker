@@ -119,6 +119,12 @@
   }
   .btn-primary:hover { background: #0c447c; }
   .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  @media (max-width: 480px) {
+    .checkout-page { margin: 40px auto; padding: 0 16px; }
+    .checkout-page h1 { font-size: 22px; }
+    .btn-primary { width: 100%; padding: 15px; font-size: 16px; }
+  }
 </style>
 
 {% endblock %}

@@ -278,6 +278,99 @@
         .g-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: 14px; }
         .g2     { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
 
+        /* ─── RESPONSIVE ─── */
+
+        /* Mobile hamburger button */
+        .mob-bar {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; height: 54px;
+            background: var(--dark); z-index: 300;
+            align-items: center; justify-content: space-between;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--lined);
+        }
+        .mob-logo {
+            display: flex; align-items: center; gap: 8px;
+            text-decoration: none;
+        }
+        .mob-logo-icon {
+            width: 26px; height: 26px; background: var(--accent); border-radius: 6px;
+            display: grid; place-items: center;
+        }
+        .mob-logo-text {
+            font-size: 14px; font-weight: 700; letter-spacing: -0.02em;
+        }
+        .mob-logo-text .p { color: #ede9e3; }
+        .mob-logo-text .h { color: var(--accent); }
+        .ham-btn {
+            background: none; border: none; cursor: pointer;
+            display: flex; flex-direction: column; gap: 4px; padding: 6px;
+        }
+        .ham-btn span {
+            display: block; width: 20px; height: 2px;
+            background: #ede9e3; border-radius: 2px;
+            transition: transform 0.25s, opacity 0.25s;
+        }
+        body.nav-open .ham-btn span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+        body.nav-open .ham-btn span:nth-child(2) { opacity: 0; }
+        body.nav-open .ham-btn span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+        /* Overlay for mobile nav */
+        .nav-overlay {
+            display: none;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+            z-index: 190; opacity: 0;
+            transition: opacity 0.25s;
+        }
+        body.nav-open .nav-overlay { opacity: 1; }
+
+        @media (max-width: 900px) {
+            :root { --sw: 240px; }
+        }
+
+        @media (max-width: 768px) {
+            :root { --sw: 240px; }
+
+            .mob-bar { display: flex; }
+            .nav-overlay { display: block; }
+
+            .sidebar {
+                transform: translateX(-100%);
+                top: 0; /* cover full height, under mob-bar visually */
+                transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s;
+                box-shadow: none;
+            }
+            body.nav-open .sidebar {
+                transform: translateX(0);
+                box-shadow: 4px 0 32px rgba(0,0,0,0.4);
+            }
+
+            #bgc {
+                left: 0 !important;
+                width: 100vw !important;
+            }
+
+            .main {
+                margin-left: 0 !important;
+                padding: 70px 18px 32px; /* 70px top clears mob-bar */
+            }
+
+            body.no-sidebar .main {
+                padding-top: 32px;
+            }
+            body.no-sidebar .mob-bar { display: none; }
+
+            .g2 { grid-template-columns: 1fr; }
+            .g-auto { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+
+            .ph-title { font-size: clamp(20px, 5vw, 28px); }
+        }
+
+        @media (max-width: 480px) {
+            .main { padding: 66px 14px 28px; }
+            .card { padding: 16px; }
+        }
+
         .btn {
             display: inline-flex; align-items: center;
             justify-content: center; gap: 6px;
@@ -309,6 +402,25 @@
     </style>
 </head>
 <body class="{% if not (current_user.is_authenticated and current_user.subscription_status == 'active') %}no-sidebar{% endif %}">
+
+{# ── Mobile top bar + overlay (only with sidebar) ── #}
+{% if current_user.is_authenticated and current_user.subscription_status == 'active' %}
+<div class="mob-bar">
+    <a href="/jobs" class="mob-logo">
+        <div class="mob-logo-icon">
+            <svg width="12" height="12" viewBox="0 0 13 13" fill="none">
+                <path d="M2 2 L8 6.5 L2 11" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="10.5" cy="6.5" r="1.6" fill="#fff"/>
+            </svg>
+        </div>
+        <span class="mob-logo-text"><span class="p">Path</span><span class="h">Hire</span></span>
+    </a>
+    <button class="ham-btn" id="hamBtn" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+    </button>
+</div>
+<div class="nav-overlay" id="navOverlay"></div>
+{% endif %}
 
 {# ── Only show sidebar if user has an active (paid) subscription ── #}
 {% if current_user.is_authenticated and current_user.subscription_status == 'active' %}
@@ -406,7 +518,8 @@
 (function () {
     const cv   = document.getElementById('bgc');
     const sc   = new THREE.Scene();
-    const gW   = () => window.innerWidth  - 256;
+    const hasSidebar = () => window.innerWidth > 768 && !document.body.classList.contains('no-sidebar');
+    const gW   = () => hasSidebar() ? window.innerWidth - 256 : window.innerWidth;
     const gH   = () => window.innerHeight;
     const cam  = new THREE.PerspectiveCamera(55, gW() / gH(), 0.1, 100);
     const ren  = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true });
@@ -470,6 +583,22 @@
         cam.aspect = gW() / gH();
         cam.updateProjectionMatrix();
         ren.setSize(gW(), gH());
+    });
+})();
+</script>
+<script>
+// Mobile nav toggle
+(function(){
+    const ham = document.getElementById('hamBtn');
+    const overlay = document.getElementById('navOverlay');
+    if (!ham) return;
+    function toggle() { document.body.classList.toggle('nav-open'); }
+    function close_nav() { document.body.classList.remove('nav-open'); }
+    ham.addEventListener('click', toggle);
+    overlay.addEventListener('click', close_nav);
+    // Close nav when a nav link is clicked
+    document.querySelectorAll('.nav-item, .logout').forEach(el => {
+        el.addEventListener('click', close_nav);
     });
 })();
 </script>

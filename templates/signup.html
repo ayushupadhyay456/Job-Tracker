@@ -39,6 +39,18 @@
         .message.success { background: #ebf7f1; color: #0e4a2a; border-color: #1a7a4a; }
         .loading { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: currentColor; margin-left: 4px; animation: blink 1.4s infinite; }
         @keyframes blink { 0%, 80%, 100% { opacity: 1; } 40% { opacity: 0.3; } }
+
+        @media (max-width: 480px) {
+            body { padding: 0; align-items: stretch; }
+            .form-shell {
+                max-width: 100%; border-radius: 0;
+                border: none; box-shadow: none;
+                min-height: 100vh;
+                padding: 36px 20px 40px;
+            }
+            .input-group input { font-size: 16px; } /* prevent iOS zoom */
+            .btn-google, .btn-submit { font-size: 16px; padding: 15px; }
+        }
     </style>
 </head>
 <body>

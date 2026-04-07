@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+
+{% block title %}Applied Jobs — PathHire{% endblock %}
+
+{% block content %}
+
+<div class="ph">
+    <div class="ph-eye">Job Tracker</div>
+    <h1 class="ph-title">Applied Jobs</h1>
+    <p class="ph-sub">Track every application you've sent — update statuses as you progress</p>
+</div>
+
+<!-- ── Stats bar ── -->
+{% set total   = applications | length %}
+{% set applied = applications | selectattr('status','equalto','Applied')     | list | length %}
+{% set interv  = applications | selectattr('status','equalto','Interviewing') | list | length %}
+{% set offered = applications | selectattr('status','equalto','Offered')      | list | length %}
+{% set rejected= applications | selectattr('status','equalto','Rejected')     | list | length %}
+
+<div class="stats-bar">
+    <div class="stat-card">
+        <div class="stat-num">{{ total }}</div>
+        <div class="stat-lbl">Total Applied</div>
+    </div>
+    <div class="stat-card stat-interv">
+        <div class="stat-num">{{ interv }}</div>
+        <div class="stat-lbl">Interviewing</div>
+    </div>
+    <div class="stat-card stat-offered">
+        <div class="stat-num">{{ offered }}</div>
+        <div class="stat-lbl">Offers</div>
+    </div>
+    <div class="stat-card stat-rej">
+        <div class="stat-num">{{ rejected }}</div>
+        <div class="stat-lbl">Rejected</div>
+    </div>
+</div>
+
+<!-- ── Filter tabs ── -->
+<div class="filter-tabs" id="filterTabs">
+    <button class="ftab active" data-filter="all">All <span class="ftab-count">{{ total }}</span></button>
+    <button class="ftab" data-filter="Applied">Pending <span class="ftab-count">{{ applied }}</span></button>
+    <button class="ftab" data-filter="Interviewing">Interviewing <span class="ftab-count">{{ interv }}</span></button>
+    <button class="ftab" data-filter="Offered">Offered <span class="ftab-count">{{ offered }}</span></button>
+    <button class="ftab" data-filter="Rejected">Rejected <span class="ftab-count">{{ rejected }}</span></button>
+</div>
+
+<!-- ── Applications list ── -->
+{% if applications %}
+<div class="app-grid" id="appGrid">
+    {% for app in applications %}
+    <div class="app-card" data-status="{{ app.status }}" data-id="{{ app.id }}">
+
+        <div class="app-card-top">
+            <!-- Company logo placeholder -->
+            <div class="app-company-icon">
+                {{ app.company[0] | upper if app.company else '?' }}
+            </div>
+
+            <div class="app-info">
+                <div class="app-title">{{ app.job_title or 'Unknown Role' }}</div>
+                <div class="app-company">{{ app.company or 'Unknown Company' }}</div>
+                {% if app.location %}
+                <div class="app-location">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    {{ app.location }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Status badge -->
+            <div class="app-status-wrap">
+                <div class="status-badge status-{{ app.status | lower | replace(' ','_') }}">
+                    {{ app.status }}
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card-meta">
+            <!-- Applied date -->
+            <div class="app-meta-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                Applied {{ app.applied_at.strftime('%d %b %Y') if app.applied_at else 'Unknown' }}
+            </div>
+
+            <!-- Match score if available -->
+            {% if app.match_score is not none %}
+            <div class="app-meta-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+                {{ app.match_score }}% match
+            </div>
+            {% endif %}
+
+            <!-- Source -->
+            {% if app.source %}
+            <div class="app-meta-item app-source">
+                {{ app.source | capitalize }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions row -->
+        <div class="app-actions">
+            {% if app.job_url %}
+            <a href="{{ app.job_url }}" target="_blank" rel="noopener" class="app-btn app-btn-view">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                View Job
+            </a>
+            {% endif %}
+
+            <!-- Status update dropdown -->
+            <select class="app-status-select" data-id="{{ app.id }}" onchange="updateStatus(this)">
+                <option value="" disabled>Update status…</option>
+                <option value="Applied"      {% if app.status == 'Applied' %}selected{% endif %}>Applied</option>
+                <option value="Interviewing" {% if app.status == 'Interviewing' %}selected{% endif %}>Interviewing</option>
+                <option value="Offered"      {% if app.status == 'Offered' %}selected{% endif %}>Offered 🎉</option>
+                <option value="Rejected"     {% if app.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                <option value="Withdrawn"    {% if app.status == 'Withdrawn' %}selected{% endif %}>Withdrawn</option>
+            </select>
+        </div>
+
+        <!-- Inline status feedback -->
+        <div class="app-update-msg" id="msg-{{ app.id }}" style="display:none;"></div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- Empty state -->
+<div class="applied-empty">
+    <div class="ae-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        </svg>
+    </div>
+    <div class="ae-title">No applications yet</div>
+    <p class="ae-sub">Start applying to jobs from the dashboard — your applications will appear here so you can track their progress.</p>
+    <a href="/jobs" class="btn">Browse Jobs →</a>
+</div>
+{% endif %}
+
+<!-- ══════════════ STYLES ══════════════ -->
+<style>
+
+/* Stats bar */
+.stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.stat-card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 16px 18px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.stat-card:hover { border-color: rgba(217,82,21,0.15); box-shadow: 0 4px 16px rgba(12,11,10,0.06); }
+.stat-num {
+    font-size: 28px; font-weight: 700;
+    letter-spacing: -0.04em; color: var(--dark); line-height: 1;
+    margin-bottom: 4px;
+}
+.stat-lbl {
+    font-size: 11px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--fg3);
+}
+.stat-interv .stat-num { color: #7c5cbf; }
+.stat-offered .stat-num { color: #2a7a3b; }
+.stat-rej    .stat-num { color: #c0392b; }
+
+/* Filter tabs */
+.filter-tabs {
+    display: flex; gap: 6px; margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+.ftab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 600;
+    background: var(--surface); border: 1px solid var(--line);
+    cursor: pointer; color: var(--fg2);
+    transition: all 0.15s;
+}
+.ftab:hover { border-color: var(--accent); color: var(--accent); }
+.ftab.active {
+    background: var(--a12); border-color: var(--a25);
+    color: var(--accent);
+}
+.ftab-count {
+    font-size: 10px; font-weight: 700;
+    background: rgba(0,0,0,0.07); color: inherit;
+    padding: 1px 5px; border-radius: 3px;
+}
+
+/* Application grid */
+.app-grid {
+    display: flex; flex-direction: column; gap: 10px;
+}
+
+.app-card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 18px 20px;
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+}
+.app-card:hover {
+    border-color: rgba(217,82,21,0.12);
+    box-shadow: 0 4px 20px rgba(12,11,10,0.06);
+    transform: translateY(-1px);
+}
+.app-card.hidden { display: none; }
+
+.app-card-top {
+    display: flex; align-items: flex-start; gap: 14px; margin-bottom: 10px;
+}
+.app-company-icon {
+    width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), #a33a0e);
+    display: grid; place-items: center;
+    font-size: 16px; font-weight: 700; color: #fff;
+    letter-spacing: -0.02em;
+}
+.app-info { flex: 1; min-width: 0; }
+.app-title {
+    font-size: 14.5px; font-weight: 700; color: var(--dark);
+    letter-spacing: -0.02em; margin-bottom: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app-company {
+    font-size: 12.5px; font-weight: 500; color: var(--fg2); margin-bottom: 3px;
+}
+.app-location {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--fg3);
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-flex; align-items: center;
+    padding: 4px 10px; border-radius: 5px;
+    font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+.status-applied      { background: rgba(217,82,21,0.1); color: #c44a12; border: 1px solid rgba(217,82,21,0.2); }
+.status-interviewing { background: rgba(124,92,191,0.1); color: #7c5cbf; border: 1px solid rgba(124,92,191,0.22); }
+.status-offered      { background: rgba(42,122,59,0.1); color: #2a7a3b; border: 1px solid rgba(42,122,59,0.2); }
+.status-rejected     { background: rgba(192,57,43,0.08); color: #c0392b; border: 1px solid rgba(192,57,43,0.18); }
+.status-withdrawn    { background: rgba(0,0,0,0.05); color: var(--fg3); border: 1px solid var(--line); }
+
+/* Meta row */
+.app-card-meta {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 12px; margin-bottom: 12px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--line);
+}
+.app-meta-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11.5px; color: var(--fg3);
+}
+.app-source {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.07em; padding: 2px 7px;
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 3px; color: var(--fg3);
+}
+
+/* Actions */
+.app-actions {
+    display: flex; align-items: center; gap: 8px;
+}
+.app-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 12px; border-radius: var(--rs);
+    font-size: 12px; font-weight: 600;
+    text-decoration: none; transition: all 0.15s;
+    white-space: nowrap;
+}
+.app-btn-view {
+    background: transparent; border: 1px solid var(--line);
+    color: var(--fg2);
+}
+.app-btn-view:hover {
+    border-color: var(--accent); color: var(--accent);
+    background: var(--a12);
+}
+.app-status-select {
+    flex: 1; padding: 6px 10px;
+    font-family: 'Geist', sans-serif;
+    font-size: 12px; font-weight: 500;
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: var(--rs); color: var(--fg2);
+    cursor: pointer; outline: none;
+    transition: border-color 0.15s;
+}
+.app-status-select:hover, .app-status-select:focus {
+    border-color: var(--accent);
+}
+
+/* Feedback message */
+.app-update-msg {
+    margin-top: 8px; font-size: 11.5px;
+    padding: 6px 10px; border-radius: 5px;
+}
+.msg-success { background: rgba(42,122,59,0.08); color: #2a7a3b; border: 1px solid rgba(42,122,59,0.18); }
+.msg-error   { background: rgba(192,57,43,0.07); color: #c0392b; border: 1px solid rgba(192,57,43,0.18); }
+
+/* Empty state */
+.applied-empty {
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center;
+    padding: 72px 32px;
+}
+.ae-icon {
+    width: 80px; height: 80px; border-radius: 20px;
+    background: var(--surface); border: 1px solid var(--line);
+    display: grid; place-items: center;
+    color: var(--fg3); margin-bottom: 20px;
+}
+.ae-title { font-size: 18px; font-weight: 700; color: var(--dark); margin-bottom: 10px; }
+.ae-sub {
+    font-size: 13.5px; color: var(--fg2); line-height: 1.65;
+    max-width: 380px; margin-bottom: 28px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .app-card-top { flex-wrap: wrap; }
+    .app-status-wrap { order: -1; width: 100%; }
+}
+@media (max-width: 480px) {
+    .stats-bar { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .filter-tabs { gap: 4px; }
+    .ftab { padding: 6px 10px; font-size: 11px; }
+}
+
+</style>
+
+<script>
+// ── Filter tabs ──
+document.querySelectorAll('.ftab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const filter = tab.dataset.filter;
+        document.querySelectorAll('.app-card').forEach(card => {
+            if (filter === 'all' || card.dataset.status === filter) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+    });
+});
+
+// ── Status update ──
+async function updateStatus(select) {
+    const appId  = select.dataset.id;
+    const status = select.value;
+    if (!status) return;
+
+    const msgEl = document.getElementById(`msg-${appId}`);
+    msgEl.style.display = 'none';
+
+    try {
+        const resp = await fetch(`/jobs/applications/${appId}/status`, {
+            method:  'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ status }),
+        });
+        const data = await resp.json();
+
+        if (data.ok) {
+            // Update the status badge in this card
+            const card = select.closest('.app-card');
+            card.dataset.status = status;
+            const badge = card.querySelector('.status-badge');
+            if (badge) {
+                badge.textContent = status;
+                badge.className = `status-badge status-${status.toLowerCase().replace(' ','_')}`;
+            }
+            msgEl.textContent   = `✓ Status updated to "${status}"`;
+            msgEl.className     = 'app-update-msg msg-success';
+            msgEl.style.display = 'block';
+            setTimeout(() => { msgEl.style.display = 'none'; }, 2500);
+        } else {
+            msgEl.textContent   = data.error || 'Update failed.';
+            msgEl.className     = 'app-update-msg msg-error';
+            msgEl.style.display = 'block';
+        }
+    } catch (e) {
+        msgEl.textContent   = 'Network error. Please try again.';
+        msgEl.className     = 'app-update-msg msg-error';
+        msgEl.style.display = 'block';
+    }
+}
+</script>
+
+{% endblock %}

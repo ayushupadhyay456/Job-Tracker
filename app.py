@@ -1,15 +1,20 @@
 import os
+import re
+import hashlib
+import time
+import threading
 import pymysql
+import requests as http_requests
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, login_required, current_user
-from core.scorer import score_resume_against_job
 
-from core.models import db, User
+from core.models import db, User, OneClickApplication
 from core.billing import billing_bp
 from core.razorpay import get_checkout_url
 from core.resume_parser import extract_text_from_pdf, truncate_resume, parse_resume_sections, infer_role_from_resume
-from core.jobs_service import get_jobs_for_user          # ← batch-scoring pipeline
+from core.jobs_service import get_jobs_for_user
+from core.scorer import score_resume_against_job, score_resume_ats, analyze_job_fit
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
@@ -32,18 +37,244 @@ login_manager.login_view = 'signup_view'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))   # SQLAlchemy 2.x style (no legacy warning)
+    return db.session.get(User, int(user_id))
 
 app.register_blueprint(billing_bp)
 
 
-# ── Landing ───────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# MODULE-LEVEL GEMINI SINGLETON
+# Initialised once at startup — NOT inside request handlers.
+# This eliminates the per-request genai.Client() construction that was
+# happening in _generate_cover_letter() on every apply preview call.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_GEMINI_API_KEY    = os.getenv("GEMINI_API_KEY")
+_gemini_app_client = None
+if _GEMINI_API_KEY:
+    try:
+        from google import genai as _genai
+        _gemini_app_client = _genai.Client(api_key=_GEMINI_API_KEY)
+    except Exception as _e:
+        print(f"⚠️  Gemini init failed in app.py: {_e}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COVER LETTER CACHE
+# Caches generated cover letters per (user_id, job_title, company) for 1 hour.
+# Same user clicking "Apply" on the same job twice → no API call.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_cl_cache: dict  = {}
+_cl_lock         = threading.Lock()
+CL_CACHE_TTL     = 3600   # 1 hour
+
+
+def _cl_cache_key(user_id: int, job_title: str, company: str) -> str:
+    raw = f"{user_id}:{job_title.lower().strip()}:{company.lower().strip()}"
+    return hashlib.md5(raw.encode()).hexdigest()[:20]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JINJA2 GLOBALS
+# ─────────────────────────────────────────────────────────────────────────────
+
+import time as _time
+
+@app.template_global()
+def now_timestamp():
+    return _time.time()
+
+@app.template_global()
+def plan_total_days(plan: str) -> int:
+    plan = (plan or '').lower().strip()
+    if plan in ('yearly', 'annual'):
+        return 365
+    if plan in ('biannual', 'bi-annual', '6month', 'semi-annual'):
+        return 183
+    return 30
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _redirect_for_user(user):
+    if not user.onboarding_complete:
+        return redirect(url_for('onboarding'))
+    if user.subscription_status != 'active':
+        checkout_url = get_checkout_url(user.plan or 'monthly', user.email, user.name)
+        return redirect(checkout_url)
+    return redirect(url_for('jobs'))
+
+
+def _require_active_subscription():
+    if not current_user.onboarding_complete:
+        return redirect(url_for('onboarding'))
+    if current_user.subscription_status != 'active':
+        flash('Please complete your subscription to access this page.', 'error')
+        checkout_url = get_checkout_url(
+            current_user.plan or 'monthly',
+            current_user.email,
+            current_user.name,
+        )
+        return redirect(checkout_url)
+    return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ATS DETECTION
+# ─────────────────────────────────────────────────────────────────────────────
+
+def detect_ats(url: str) -> dict:
+    if not url:
+        return {"ats": "redirect", "url": url or ""}
+
+    gh = re.search(r'greenhouse\.io/([^/]+)/jobs/(\d+)', url)
+    if gh:
+        return {"ats": "greenhouse", "board_token": gh.group(1), "job_id": gh.group(2)}
+
+    lv = re.search(r'lever\.co/([^/]+)/([a-f0-9-]{36})', url)
+    if lv:
+        return {"ats": "lever", "company": lv.group(1), "posting_id": lv.group(2)}
+
+    wk = re.search(r'workable\.com/([^/]+)/j/([A-Za-z0-9]+)', url)
+    if wk:
+        return {"ats": "workable", "company": wk.group(1), "job_id": wk.group(2)}
+
+    rc = re.search(r'([^.]+)\.recruitee\.com/o/([^/?]+)', url)
+    if rc:
+        return {"ats": "recruitee", "company": rc.group(1), "slug": rc.group(2)}
+
+    return {"ats": "redirect", "url": url}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ATS SUBMIT
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _submit_greenhouse(board_token: str, job_id: str, user, cover_letter: str) -> dict:
+    endpoint  = f"https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs/{job_id}"
+    form_data = {
+        "first_name":   user.name.split()[0] if user.name else "",
+        "last_name":    " ".join(user.name.split()[1:]) if user.name and len(user.name.split()) > 1 else "",
+        "email":        user.email,
+        "resume_text":  user.resume_text or "",
+        "cover_letter": cover_letter or "",
+    }
+    try:
+        resp = http_requests.post(endpoint, data=form_data, timeout=12)
+        if resp.status_code in (200, 201):
+            return {"ok": True, "ats": "greenhouse"}
+        return {"ok": False, "error": f"Greenhouse returned {resp.status_code}: {resp.text[:200]}"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def _submit_lever(company: str, posting_id: str, user, cover_letter: str) -> dict:
+    endpoint = "https://api.lever.co/v0/postings/{company}/{posting_id}/apply".format(
+        company=company, posting_id=posting_id
+    )
+    payload = {
+        "name":     user.name or "",
+        "email":    user.email,
+        "resume":   user.resume_text or "",
+        "comments": cover_letter or "",
+    }
+    try:
+        resp = http_requests.post(endpoint, json=payload, timeout=12)
+        if resp.status_code in (200, 201):
+            return {"ok": True, "ats": "lever"}
+        return {"ok": False, "error": f"Lever returned {resp.status_code}: {resp.text[:200]}"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def _submit_workable(company: str, job_id: str, user, cover_letter: str) -> dict:
+    endpoint = f"https://apply.workable.com/api/v1/widget/accounts/{company}/jobs/{job_id}/apply"
+    payload  = {
+        "firstname": user.name.split()[0] if user.name else "",
+        "lastname":  " ".join(user.name.split()[1:]) if user.name and len(user.name.split()) > 1 else "",
+        "email":     user.email,
+        "summary":   cover_letter or "",
+        "resume":    user.resume_text or "",
+    }
+    try:
+        resp = http_requests.post(endpoint, json=payload, timeout=12)
+        if resp.status_code in (200, 201):
+            return {"ok": True, "ats": "workable"}
+        return {"ok": False, "error": f"Workable returned {resp.status_code}: {resp.text[:200]}"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def _submit_recruitee(company: str, slug: str, user, cover_letter: str) -> dict:
+    endpoint = f"https://{company}.recruitee.com/api/v1/candidates"
+    payload  = {
+        "candidate": {
+            "name":         user.name or "",
+            "email":        user.email,
+            "cover_letter": cover_letter or "",
+        },
+        "offers": [{"slug": slug}],
+    }
+    try:
+        resp = http_requests.post(endpoint, json=payload, timeout=12)
+        if resp.status_code in (200, 201):
+            return {"ok": True, "ats": "recruitee"}
+        return {"ok": False, "error": f"Recruitee returned {resp.status_code}: {resp.text[:200]}"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def _attempt_ats_submit(job_url: str, user, cover_letter: str) -> dict:
+    ats_info = detect_ats(job_url)
+    ats      = ats_info.get("ats")
+
+    if ats == "greenhouse":
+        result = _submit_greenhouse(ats_info["board_token"], ats_info["job_id"], user, cover_letter)
+        result["mode"] = "direct" if result["ok"] else "redirect"
+        if not result["ok"]:
+            result["url"] = job_url
+        return result
+
+    if ats == "lever":
+        result = _submit_lever(ats_info["company"], ats_info["posting_id"], user, cover_letter)
+        result["mode"] = "direct" if result["ok"] else "redirect"
+        if not result["ok"]:
+            result["url"] = job_url
+        return result
+
+    if ats == "workable":
+        result = _submit_workable(ats_info["company"], ats_info["job_id"], user, cover_letter)
+        result["mode"] = "direct" if result["ok"] else "redirect"
+        if not result["ok"]:
+            result["url"] = job_url
+        return result
+
+    if ats == "recruitee":
+        result = _submit_recruitee(ats_info["company"], ats_info["slug"], user, cover_letter)
+        result["mode"] = "direct" if result["ok"] else "redirect"
+        if not result["ok"]:
+            result["url"] = job_url
+        return result
+
+    return {"ok": False, "mode": "redirect", "url": job_url, "ats": ats or "unknown"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LANDING
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/')
 def index():
     return render_template('landing.html')
 
 
-# ── Profile picture ───────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# PROFILE PICTURE
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/upload-pfp', methods=['POST'])
 @login_required
 def upload_pfp():
@@ -67,18 +298,20 @@ def upload_pfp():
     return redirect(request.referrer or url_for('jobs'))
 
 
-# ── Auth ──────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTH — Google OAuth
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/auth/google')
 def auth_google():
     from core.oauth import get_flow
-    import secrets
+    from flask import session
     flow = get_flow(url_for('auth_google_callback', _external=True))
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='select_account'
+        prompt='select_account',
     )
-    from flask import session
     session['oauth_state'] = state
     return redirect(authorization_url)
 
@@ -95,38 +328,36 @@ def auth_google_callback():
         return redirect(url_for('signup_view'))
 
     info = get_user_info(flow.credentials)
-
     user = User.query.filter_by(email=info['email']).first()
+
     if not user:
-        # New user — create account, send to payment
         plan = session.pop('signup_plan', 'monthly')
         user = User(
-            name=info['name'],
-            email=info['email'],
-            google_id=info['google_id'],
-            picture=info['picture'],
-            subscription_status='pending_payment',
-            plan=plan
+            name                = info['name'],
+            email               = info['email'],
+            google_id           = info['google_id'],
+            picture             = info['picture'],
+            subscription_status = 'pending_payment',
+            plan                = plan,
+            onboarding_complete = False,
         )
         db.session.add(user)
         db.session.commit()
         login_user(user)
-        redirect_url = get_checkout_url(plan, info['email'], info['name'])
-        return redirect(redirect_url)
+        return redirect(url_for('onboarding'))
     else:
-        # Existing user — update Google info and log in
         user.google_id = info['google_id']
         user.picture   = info['picture']
         if not user.name:
             user.name = info['name']
         db.session.commit()
         login_user(user)
-        if user.subscription_status == 'active':
-            return redirect(url_for('jobs'))
-        else:
-            redirect_url = get_checkout_url(user.plan, user.email, user.name)
-            return redirect(redirect_url)
+        return _redirect_for_user(user)
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTH — Email / password
+# ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/signup', methods=['GET'])
 def signup_view():
@@ -137,29 +368,33 @@ def signup_view():
 def api_signup():
     try:
         data     = request.get_json()
-        name     = data.get('name')
-        email    = data.get('email', '').lower()
-        password = data.get('password')
+        name     = data.get('name', '').strip()
+        email    = data.get('email', '').lower().strip()
+        password = data.get('password', '')
         plan     = data.get('plan', 'monthly')
 
-        # ── BUG FIX: reject duplicate emails instead of silently logging in
-        #    the existing account (which caused wrong name to appear in UI)
-        user = User.query.filter_by(email=email).first()
-        if user:
+        if not name or not email or not password:
+            return jsonify({"success": False, "error": "Name, email and password are required."}), 400
+
+        if User.query.filter_by(email=email).first():
             return jsonify({
                 "success": False,
-                "error": "An account with this email already exists. Please log in instead."
+                "error": "An account with this email already exists. Please log in instead.",
             }), 409
 
-        user = User(name=name, email=email,
-                    subscription_status='pending_payment', plan=plan)
+        user = User(
+            name                = name,
+            email               = email,
+            subscription_status = 'pending_payment',
+            plan                = plan,
+            onboarding_complete = False,
+        )
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
 
         login_user(user)
-        redirect_url = get_checkout_url(plan, email, name)
-        return jsonify({"success": True, "redirect_url": redirect_url})
+        return jsonify({"success": True, "redirect_url": url_for('onboarding')})
 
     except Exception as e:
         db.session.rollback()
@@ -167,12 +402,11 @@ def api_signup():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# ── Login ─────────────────────────────────────────────────────────────────────
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email    = request.form.get('email', '').lower()
-        password = request.form.get('password')
+        email    = request.form.get('email', '').lower().strip()
+        password = request.form.get('password', '')
         remember = bool(request.form.get('remember'))
 
         user = User.query.filter_by(email=email).first()
@@ -181,12 +415,14 @@ def login():
             return redirect(url_for('login'))
 
         login_user(user, remember=remember)
-        return redirect(request.args.get('next') or url_for('jobs'))
+        next_page = request.args.get('next')
+        if next_page and next_page.startswith('/'):
+            return redirect(next_page)
+        return _redirect_for_user(user)
 
     return render_template('login.html')
 
 
-# ── Logout ────────────────────────────────────────────────────────────────────
 @app.route('/logout')
 @login_required
 def logout():
@@ -196,12 +432,15 @@ def logout():
     return redirect(url_for('index'))
 
 
-# ── Onboarding ────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# ONBOARDING
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/onboarding')
 @login_required
 def onboarding():
     if current_user.onboarding_complete:
-        return redirect(url_for('jobs'))
+        return _redirect_for_user(current_user)
     return render_template('onboarding.html')
 
 
@@ -209,6 +448,7 @@ def onboarding():
 @login_required
 def onboarding_save_preferences():
     data = request.get_json() or {}
+
     role = data.get('role', '').strip()
     exp  = data.get('experience_level', '').strip()
     if role:
@@ -216,8 +456,62 @@ def onboarding_save_preferences():
         current_user.domain        = role
     if exp:
         current_user.experience_level = exp
+    if data.get('preferred_location'):
+        current_user.preferred_location = data['preferred_location'].strip()
+    if data.get('work_type'):
+        current_user.work_type = data['work_type']
+    if data.get('employment_type'):
+        current_user.employment_type = data['employment_type']
+    if data.get('salary_min'):
+        try: current_user.salary_min = int(data['salary_min'])
+        except (ValueError, TypeError): pass
+    if data.get('salary_max'):
+        try: current_user.salary_max = int(data['salary_max'])
+        except (ValueError, TypeError): pass
+    if data.get('skills'):
+        current_user.skills = data['skills']
+
     db.session.commit()
     return jsonify({"success": True})
+
+
+@app.route('/onboarding/upload-resume', methods=['POST'])
+@login_required
+def onboarding_upload_resume():
+    file = request.files.get('resume_pdf')
+    if not file or file.filename == '':
+        return jsonify({"success": False, "error": "No file provided"}), 400
+    if not file.filename.lower().endswith('.pdf'):
+        return jsonify({"success": False, "error": "Only PDF files are supported"}), 400
+
+    file_bytes = file.read()
+    if len(file_bytes) > 5 * 1024 * 1024:
+        return jsonify({"success": False, "error": "File too large (max 5 MB)"}), 400
+
+    try:
+        raw_text = extract_text_from_pdf(file_bytes)
+        if not raw_text.strip():
+            return jsonify({
+                "success": False,
+                "error": "Could not extract text. Please upload a text-based PDF.",
+            }), 422
+
+        parsed_data = parse_resume_sections(raw_text)
+        current_user.resume_text   = truncate_resume(raw_text, max_chars=5000)
+        current_user.inferred_role = parsed_data.get('role') or infer_role_from_resume(raw_text)
+        current_user.domain        = current_user.inferred_role
+
+        pdf_name = parsed_data.get('name', '')
+        if pdf_name and pdf_name != 'Unknown' and not current_user.name:
+            current_user.name = pdf_name
+
+        db.session.commit()
+        return jsonify({"success": True, "detected_role": current_user.inferred_role})
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Onboarding resume parse error: {e}")
+        return jsonify({"success": False, "error": "Failed to parse resume"}), 500
 
 
 @app.route('/onboarding/complete', methods=['POST'])
@@ -225,45 +519,49 @@ def onboarding_save_preferences():
 def onboarding_complete():
     current_user.onboarding_complete = True
     db.session.commit()
-    return jsonify({"success": True})
+
+    checkout_url = get_checkout_url(
+        current_user.plan or 'monthly',
+        current_user.email,
+        current_user.name,
+    )
+    return jsonify({"success": True, "redirect_url": checkout_url})
 
 
-# ── Jobs ──────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# JOBS  (paid users only)
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/jobs')
 @login_required
 def jobs():
-    has_resume = bool(current_user.resume_text)
+    guard = _require_active_subscription()
+    if guard:
+        return guard
 
-    # ── BUG FIX: when the user removes their resume, inferred_role and domain
-    #    are cleared too. Don't fall back to a hardcoded role — instead show
-    #    an empty dashboard that prompts the user to re-upload their resume.
-    role = current_user.inferred_role or current_user.domain
+    has_resume = bool(current_user.resume_text)
+    role       = current_user.inferred_role or current_user.domain
 
     if not has_resume or not role:
-        # No resume → nothing to score against; skip the API call entirely
-        return render_template(
-            'jobs.html',
-            jobs       = [],
-            has_resume = False,
-        )
+        return render_template('jobs.html', jobs=[], has_resume=False)
 
     live_jobs = get_jobs_for_user(
         role        = role,
         resume_text = current_user.resume_text,
         top_n       = 20,
+        use_gemini  = False,  # Pure-python scoring = zero Gemini quota on /jobs page
+                              # Set True only if you have a paid Gemini API key
     )
-
-    return render_template(
-        'jobs.html',
-        jobs       = live_jobs,
-        has_resume = True,
-    )
+    return render_template('jobs.html', jobs=live_jobs, has_resume=True)
 
 
-# ── Jobs: save/bookmark ───────────────────────────────────────────────────────
 @app.route('/jobs/save', methods=['POST'])
 @login_required
 def jobs_save():
+    guard = _require_active_subscription()
+    if guard:
+        return jsonify({"ok": False, "error": "Subscription required"}), 403
+
     data   = request.get_json() or {}
     job_id = str(data.get('job_id', ''))
     saved  = bool(data.get('saved', True))
@@ -271,8 +569,6 @@ def jobs_save():
     if not job_id:
         return jsonify({"ok": False, "error": "No job_id"}), 400
 
-    # saved_job_ids is a JSON list column — add to User model if missing:
-    # saved_job_ids = db.Column(db.JSON, default=list)
     ids = list(current_user.saved_job_ids or [])
     if saved and job_id not in ids:
         ids.append(job_id)
@@ -284,114 +580,300 @@ def jobs_save():
     return jsonify({"ok": True, "saved": saved})
 
 
-# ── Resume ────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE-CLICK APPLY
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _generate_cover_letter(user, job_title: str, company: str, job_description: str) -> str:
+    """
+    Generates a short cover letter using Gemini.
+
+    OPTIMISATIONS vs original:
+      - Reuses module-level _gemini_app_client (no per-request genai.Client())
+      - Cached per (user_id, job_title, company) for 1 hour
+      - Resume truncated to 1000 chars (was 2000)
+      - JD truncated to 500 chars (was 800)
+      - max_output_tokens 300 (was 400)
+    """
+    # ── Cache check ────────────────────────────────────────────────────────────
+    ck    = _cl_cache_key(user.id, job_title, company)
+    entry = _cl_cache.get(ck)
+    if entry and (time.time() - entry["ts"]) < CL_CACHE_TTL:
+        return entry["text"]
+
+    # ── Gemini call ────────────────────────────────────────────────────────────
+    if _gemini_app_client:
+        try:
+            from google.genai import types as gtypes
+            prompt = (
+                f"Write a concise 3-paragraph (~130 word) professional cover letter. "
+                f"No filler phrases. Output ONLY the letter body.\n"
+                f"Candidate: {user.name or 'Applicant'}\n"
+                f"Role: {job_title} at {company}\n"
+                f"JD excerpt: {job_description[:500]}\n"
+                f"Resume excerpt: {(user.resume_text or '')[:1000]}"
+            )
+            resp = _gemini_app_client.models.generate_content(
+                model    = "gemini-2.0-flash",
+                contents = prompt,
+                config   = gtypes.GenerateContentConfig(
+                    max_output_tokens = 300,
+                    temperature       = 0.4,
+                ),
+            )
+            text = resp.text.strip()
+            with _cl_lock:
+                _cl_cache[ck] = {"ts": time.time(), "text": text}
+            return text
+        except Exception as e:
+            app.logger.warning(f"Cover letter generation failed: {e}")
+
+    # ── Smart fallback template ────────────────────────────────────────────────
+    resume_snippet = (user.resume_text or "")[:500]
+    skills_preview = ""
+    m = re.search(r'skills?\W+(.{30,80})', resume_snippet, re.IGNORECASE)
+    if m:
+        skills_preview = m.group(1).split('\n')[0].strip()
+
+    text = (
+        f"Having followed {company}'s work closely, I was excited to see the {job_title} opening. "
+        f"My background aligns directly with what you're looking for"
+        + (f" — particularly my hands-on experience with {skills_preview}" if skills_preview else "")
+        + ".\n\n"
+        "Throughout my career I have delivered consistent results by combining technical depth with "
+        "strong cross-functional collaboration. I thrive in fast-paced environments and take pride "
+        "in writing clean, maintainable solutions to complex problems.\n\n"
+        f"I'd welcome the chance to bring this experience to {company} and contribute meaningfully "
+        "to your team's goals. Thank you for your time and consideration."
+    )
+    with _cl_lock:
+        _cl_cache[ck] = {"ts": time.time(), "text": text}
+    return text
+
+
+@app.route('/jobs/apply/preview', methods=['POST'])
+@login_required
+def jobs_apply_preview():
+    guard = _require_active_subscription()
+    if guard:
+        return jsonify({"ok": False, "error": "Subscription required"}), 403
+
+    data        = request.get_json() or {}
+    job_title   = (data.get('job_title')   or '').strip()
+    company     = (data.get('company')     or '').strip()
+    description = (data.get('description') or '').strip()
+    job_url     = (data.get('job_url')     or '').strip()
+
+    if not job_title or not company:
+        return jsonify({"ok": False, "error": "job_title and company are required"}), 400
+
+    cover_letter = _generate_cover_letter(current_user, job_title, company, description)
+
+    ats_info = detect_ats(job_url)
+    ats      = ats_info.get("ats", "redirect")
+    mode     = "direct" if ats in ("greenhouse", "lever", "workable", "recruitee") else "redirect"
+
+    return jsonify({
+        "ok":           True,
+        "cover_letter": cover_letter,
+        "ats":          ats,
+        "apply_mode":   mode,
+    })
+
+
+@app.route('/jobs/apply/confirm', methods=['POST'])
+@login_required
+def jobs_apply_confirm():
+    guard = _require_active_subscription()
+    if guard:
+        return jsonify({"ok": False, "error": "Subscription required"}), 403
+
+    data         = request.get_json() or {}
+    job_title    = (data.get('job_title')    or '').strip()
+    company      = (data.get('company')      or '').strip()
+    job_id       = (data.get('job_id')       or '').strip() or None
+    job_url      = (data.get('job_url')      or '').strip() or None
+    location     = (data.get('location')     or '').strip() or None
+    source       = (data.get('source')       or '').strip() or None
+    match_score  = data.get('match_score')
+    cover_letter = (data.get('cover_letter') or '').strip() or None
+
+    if not job_title or not company:
+        return jsonify({"ok": False, "error": "job_title and company are required"}), 400
+
+    # ── Prevent duplicate applications ────────────────────────────────────────
+    existing = OneClickApplication.query.filter_by(
+        user_id   = current_user.id,
+        job_title = job_title,
+        company   = company,
+    ).first()
+    if existing:
+        return jsonify({
+            "ok":              True,
+            "already_applied": True,
+            "applied_at":      existing.applied_at.isoformat(),
+        })
+
+    # ── Attempt ATS direct submit ──────────────────────────────────────────────
+    submit_result = {"ok": False, "mode": "redirect", "url": job_url}
+    if job_url:
+        submit_result = _attempt_ats_submit(job_url, current_user, cover_letter or "")
+
+    try:
+        ms = int(match_score) if match_score is not None else None
+    except (ValueError, TypeError):
+        ms = None
+
+    application = OneClickApplication(
+        user_id      = current_user.id,
+        job_id       = job_id,
+        job_title    = job_title,
+        company      = company,
+        location     = location,
+        job_url      = job_url,
+        source       = source,
+        match_score  = ms,
+        cover_letter = cover_letter,
+        status       = "Applied",
+    )
+    db.session.add(application)
+    db.session.commit()
+
+    return jsonify({
+        "ok":           True,
+        "id":           application.id,
+        "applied_at":   application.applied_at.isoformat(),
+        "mode":         submit_result.get("mode", "redirect"),
+        "ats":          submit_result.get("ats", "unknown"),
+        "redirect_url": submit_result.get("url") if submit_result.get("mode") == "redirect" else None,
+        "direct_ok":    submit_result.get("ok", False),
+    })
+
+
+@app.route('/jobs/applications', methods=['GET'])
+@login_required
+def jobs_applications():
+    guard = _require_active_subscription()
+    if guard:
+        return jsonify({"ok": False, "error": "Subscription required"}), 403
+
+    apps = (
+        OneClickApplication.query
+        .filter_by(user_id=current_user.id)
+        .order_by(OneClickApplication.applied_at.desc())
+        .all()
+    )
+    return jsonify({"ok": True, "applications": [a.to_dict() for a in apps]})
+
+
+@app.route('/jobs/applications/<int:app_id>/status', methods=['PATCH'])
+@login_required
+def jobs_application_status(app_id):
+    guard = _require_active_subscription()
+    if guard:
+        return jsonify({"ok": False, "error": "Subscription required"}), 403
+
+    VALID_STATUSES = {"Applied", "Interviewing", "Offered", "Rejected", "Withdrawn"}
+
+    application = OneClickApplication.query.filter_by(
+        id=app_id, user_id=current_user.id
+    ).first_or_404()
+
+    data       = request.get_json() or {}
+    new_status = (data.get('status') or '').strip()
+
+    if new_status not in VALID_STATUSES:
+        return jsonify({
+            "ok":    False,
+            "error": f"Invalid status. Choose from: {', '.join(sorted(VALID_STATUSES))}",
+        }), 400
+
+    application.status = new_status
+    db.session.commit()
+    return jsonify({"ok": True, "status": new_status})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RESUME  (paid users only)
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/resume', methods=['GET', 'POST'])
 @login_required
 def resume():
+    guard = _require_active_subscription()
+    if guard:
+        return guard
+
     if request.method == 'POST':
         file = request.files.get('resume_pdf')
-        # ... (keep existing file validation logic)
+
+        if not file or file.filename == '':
+            flash('No file selected. Please choose a PDF.', 'error')
+            return redirect(url_for('resume'))
+
+        if not file.filename.lower().endswith('.pdf'):
+            flash('Only PDF files are supported.', 'error')
+            return redirect(url_for('resume'))
 
         file_bytes = file.read()
+        if len(file_bytes) > 5 * 1024 * 1024:
+            flash('File too large. Please upload a PDF under 5 MB.', 'error')
+            return redirect(url_for('resume'))
+
         try:
             raw_text = extract_text_from_pdf(file_bytes)
-            # ... (keep empty text check)
+            if not raw_text.strip():
+                flash(
+                    'Could not extract text. Make sure it is a text-based PDF, not a scanned image.',
+                    'error',
+                )
+                return redirect(url_for('resume'))
 
-            # 1. Parse structured data from the resume
             parsed_data = parse_resume_sections(raw_text)
-            
-            # 2. Update Database: Resume text and Role
+
             current_user.resume_text   = truncate_resume(raw_text, max_chars=5000)
-            current_user.inferred_role = parsed_data['role']
-            current_user.domain        = parsed_data['role']
-            
-            # FIX: Update the user's name in the DB from the PDF
-            if parsed_data['name'] and parsed_data['name'] != "Unknown":
-                current_user.name = parsed_data['name']
-                
+            current_user.inferred_role = parsed_data.get('role') or infer_role_from_resume(raw_text)
+            current_user.domain        = current_user.inferred_role
+
+            pdf_name = parsed_data.get('name', '')
+            if pdf_name and pdf_name != 'Unknown' and not current_user.name:
+                current_user.name = pdf_name
+
             db.session.commit()
-            flash(f'Resume uploaded! Detected role: {parsed_data["role"]}', 'success')
+            flash(f'Resume uploaded! Detected role: {current_user.inferred_role}', 'success')
             return redirect(url_for('resume'))
 
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Resume parse error: {e}")
-            flash('Something went wrong. Please try again.', 'error')
+            flash('Something went wrong while parsing your resume. Please try again.', 'error')
             return redirect(url_for('resume'))
 
-    # 3. Handle GET request: Generate dynamic data for the UI
+    # GET — score_resume_ats is now cached in scorer.py (TTL 1 hour)
     parsed = None
     if current_user.resume_text:
         parsed = parse_resume_sections(current_user.resume_text)
-        
-        # FIX: Calculate a real score instead of hardcoded 75
-        # We compare their resume against a target string of their own role/skills
-        target_criteria = f"{current_user.inferred_role} {' '.join(parsed['skills'][:5])}"
-        parsed['match_score'] = score_resume_against_job(current_user.resume_text, target_criteria)
+
+        ats = score_resume_ats(
+            resume_text = current_user.resume_text,
+            role        = current_user.inferred_role or "",
+        )
+        parsed['match_score']       = ats['overall']
+        parsed['technical_skills']  = ats['technical_skills']
+        parsed['experience_score']  = ats['experience']
+        parsed['keywords_score']    = ats['keywords']
+        parsed['formatting_score']  = ats['formatting']
+        parsed['missing_keywords']  = ats['missing_keywords']
+        parsed['bullet_point_fix']  = ats['bullet_point_fix']
+        parsed['ats_summary']       = ats['summary']
+        parsed['missing_details']   = ats.get('missing_details', [])
 
     return render_template('resume.html', parsed=parsed)
-# @login_required
-# def resume():
-#     if request.method == 'POST':
-#         file = request.files.get('resume_pdf')
-
-#         if not file or file.filename == '':
-#             flash('No file selected. Please choose a PDF.', 'error')
-#             return redirect(url_for('resume'))
-
-#         if not file.filename.lower().endswith('.pdf'):
-#             flash('Only PDF files are supported.', 'error')
-#             return redirect(url_for('resume'))
-
-#         file_bytes = file.read()
-#         if len(file_bytes) > 5 * 1024 * 1024:
-#             flash('File too large. Please upload a PDF under 5 MB.', 'error')
-#             return redirect(url_for('resume'))
-
-#         try:
-#             raw_text = extract_text_from_pdf(file_bytes)
-#             if not raw_text.strip():
-#                 flash(
-#                     'Could not extract text. Make sure it is a text-based PDF, not a scanned image.',
-#                     'error'
-#                 )
-#                 return redirect(url_for('resume'))
-
-#             current_user.resume_text   = truncate_resume(raw_text, max_chars=5000)
-#             inferred                   = infer_role_from_resume(raw_text)
-#             current_user.inferred_role = inferred
-#             current_user.domain        = inferred
-#             db.session.commit()
-#             flash(f'Resume uploaded! Detected role: {inferred}', 'success')
-#             return redirect(url_for('resume'))
-
-#         except Exception as e:
-#             db.session.rollback()
-#             app.logger.error(f"Resume parse error: {e}")
-#             flash('Something went wrong while parsing your resume. Please try again.', 'error')
-#             return redirect(url_for('resume'))
-
-#     parsed = None
-#     if current_user.resume_text:
-#         parsed = parse_resume_sections(current_user.resume_text)
-
-#     return render_template('resume.html', parsed=parsed)
-
-
-# ── Resume: remove ────────────────────────────────────────────────────────────
-@app.route('/remove_resume', methods=['POST'])
-@login_required
-def remove_resume():
-    current_user.resume_text   = None
-    current_user.inferred_role = None
-    db.session.commit()
-    flash('Resume removed.', 'success')
-    return redirect(url_for('resume'))
 
 
 @app.route('/resume/delete', methods=['POST'])
 @login_required
-def resume_delete():
+def remove_resume():
     current_user.resume_text   = None
     current_user.inferred_role = None
     current_user.domain        = None
@@ -400,13 +882,335 @@ def resume_delete():
     return redirect(url_for('resume'))
 
 
-# ── Pricing ───────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# RESUME IMPROVE
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route('/resume/improve', methods=['POST'])
+@login_required
+def resume_improve():
+    guard = _require_active_subscription()
+    if guard:
+        return jsonify({"ok": False, "error": "Subscription required"}), 403
+
+    if not current_user.resume_text:
+        return jsonify({"ok": False, "error": "No resume uploaded"}), 400
+
+    from flask import session as flask_session
+    from core.scorer import _client as gemini_client
+    from google.genai import types as gtypes
+
+    if not gemini_client:
+        return jsonify({"ok": False, "error": "AI service not available. Please contact support."}), 503
+
+    IMPROVE_PROMPT = """You are a professional resume writer and ATS optimisation expert.
+
+Rewrite and improve the following resume to maximise ATS scores:
+1. Add strong action verbs to every bullet point (Led, Built, Reduced, Delivered, Scaled, etc.)
+2. Quantify achievements where possible — use realistic estimates if needed and mark them with * to indicate estimated
+3. Add a professional 3-line summary at the top if one is missing
+4. Ensure all standard sections have clear headers in UPPERCASE (EXPERIENCE, EDUCATION, SKILLS, PROJECTS, CERTIFICATIONS)
+5. Improve keyword density relevant to the target role
+6. Keep all factual information accurate — do NOT invent job titles, companies, or dates
+7. Use • for bullet points
+8. Keep the same overall structure and length as the original
+
+Target role: {role}
+
+Return ONLY the improved resume text. No commentary, no markdown code fences, no explanations.
+
+ORIGINAL RESUME:
+{resume}
+"""
+
+    try:
+        prompt = IMPROVE_PROMPT.format(
+            role   = current_user.inferred_role or "Software Engineer",
+            resume = current_user.resume_text[:4500],
+        )
+        resp = gemini_client.models.generate_content(
+            model    = "gemini-2.0-flash",
+            contents = prompt,
+            config   = gtypes.GenerateContentConfig(
+                max_output_tokens = 2000,
+                temperature       = 0.3,
+            ),
+        )
+        improved_text = resp.text.strip()
+        flask_session['improved_resume'] = improved_text
+        return jsonify({"ok": True, "download_url": "/resume/download-improved"})
+
+    except Exception as e:
+        app.logger.error(f"Resume improve error: {e}")
+        return jsonify({"ok": False, "error": "Improvement failed. Please try again."}), 500
+
+
+@app.route('/resume/download-improved')
+@login_required
+def resume_download_improved():
+    guard = _require_active_subscription()
+    if guard:
+        return redirect(url_for('resume'))
+
+    from flask import session as flask_session, make_response
+    improved_text = flask_session.get('improved_resume')
+    if not improved_text:
+        flash('No improved resume found. Please generate one first.', 'error')
+        return redirect(url_for('resume'))
+
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import cm
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+        from reportlab.lib.enums import TA_LEFT, TA_CENTER
+        import io
+
+        buf = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buf,
+            pagesize     = A4,
+            rightMargin  = 2   * cm,
+            leftMargin   = 2   * cm,
+            topMargin    = 1.8 * cm,
+            bottomMargin = 1.8 * cm,
+        )
+
+        styles = getSampleStyleSheet()
+
+        name_style = ParagraphStyle(
+            'ResumeName',
+            parent    = styles['Normal'],
+            fontSize  = 18,
+            leading   = 22,
+            fontName  = 'Helvetica-Bold',
+            textColor = colors.HexColor('#0d0c0b'),
+            spaceAfter= 2,
+        )
+        contact_style = ParagraphStyle(
+            'ResumeContact',
+            parent    = styles['Normal'],
+            fontSize  = 9,
+            leading   = 13,
+            textColor = colors.HexColor('#6c6560'),
+            spaceAfter= 8,
+        )
+        section_style = ParagraphStyle(
+            'SectionHead',
+            parent      = styles['Normal'],
+            fontSize    = 10,
+            leading     = 14,
+            fontName    = 'Helvetica-Bold',
+            textColor   = colors.HexColor('#d95215'),
+            spaceBefore = 12,
+            spaceAfter  = 4,
+        )
+        normal_style = ParagraphStyle(
+            'ResumeNormal',
+            parent    = styles['Normal'],
+            fontSize  = 9.5,
+            leading   = 14,
+            textColor = colors.HexColor('#1c1a17'),
+            spaceAfter= 2,
+        )
+        bullet_style = ParagraphStyle(
+            'ResumeBullet',
+            parent          = styles['Normal'],
+            fontSize        = 9.5,
+            leading         = 14,
+            textColor       = colors.HexColor('#1c1a17'),
+            leftIndent      = 12,
+            firstLineIndent = -10,
+            spaceAfter      = 2,
+        )
+        summary_style = ParagraphStyle(
+            'ResumeSummary',
+            parent        = styles['Normal'],
+            fontSize      = 9.5,
+            leading       = 15,
+            textColor     = colors.HexColor('#3a3530'),
+            backColor     = colors.HexColor('#f6f4f1'),
+            borderPadding = (6, 8, 6, 8),
+            spaceAfter    = 6,
+        )
+
+        def safe(text):
+            return (text or '').replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+        story      = []
+        lines      = improved_text.splitlines()
+        in_summary = False
+
+        SECTION_RE = re.compile(
+            r'^(EXPERIENCE|EDUCATION|SKILLS|PROJECTS|CERTIFICATIONS|SUMMARY|'
+            r'CONTACT|PROFILE|ACHIEVEMENTS|WORK\s+HISTORY|PROFESSIONAL\s+SUMMARY|'
+            r'TECHNICAL\s+SKILLS|EMPLOYMENT)\b',
+            re.IGNORECASE
+        )
+
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            if not stripped:
+                story.append(Spacer(1, 4))
+                continue
+
+            if i == 0 or (i <= 2 and not any(stripped.startswith(c) for c in ['•', '-', '*'])):
+                if i == 0:
+                    story.append(Paragraph(safe(stripped), name_style))
+                    continue
+
+            if SECTION_RE.match(stripped) or (stripped.isupper() and 3 < len(stripped) < 40):
+                story.append(HRFlowable(width='100%', thickness=0.5,
+                                        color=colors.HexColor('#e8e4df'), spaceAfter=4))
+                story.append(Paragraph(safe(stripped), section_style))
+                in_summary = stripped.upper() in ('SUMMARY', 'PROFESSIONAL SUMMARY', 'PROFILE', 'OBJECTIVE')
+                continue
+
+            if i <= 5 and re.search(r'@|linkedin|github|\+\d|\(\d', stripped, re.I):
+                story.append(Paragraph(safe(stripped), contact_style))
+                continue
+
+            if stripped.startswith('•') or stripped.startswith('- ') or stripped.startswith('* '):
+                bullet_text = stripped.lstrip('•-* ').strip()
+                story.append(Paragraph(f'• {safe(bullet_text)}', bullet_style))
+                continue
+
+            if in_summary:
+                story.append(Paragraph(safe(stripped), summary_style))
+                continue
+
+            story.append(Paragraph(safe(stripped), normal_style))
+
+        doc.build(story)
+        buf.seek(0)
+
+        name_slug = re.sub(r'[^a-z0-9]', '_', (current_user.name or 'resume').lower())
+        filename  = f"{name_slug}_improved_resume.pdf"
+
+        response = make_response(buf.read())
+        response.headers['Content-Type']        = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    except ImportError:
+        flash('PDF generation library not installed. Run: pip install reportlab', 'error')
+        return redirect(url_for('resume'))
+    except Exception as e:
+        app.logger.error(f"PDF generation error: {e}")
+        flash('Could not generate PDF. Please try again.', 'error')
+        return redirect(url_for('resume'))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# APPLIED JOBS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route('/applied')
+@login_required
+def applied_jobs():
+    guard = _require_active_subscription()
+    if guard:
+        return guard
+
+    apps = (
+        OneClickApplication.query
+        .filter_by(user_id=current_user.id)
+        .order_by(OneClickApplication.applied_at.desc())
+        .all()
+    )
+    return render_template('applied.html', applications=apps)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PROFILE
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route('/profile')
+@login_required
+def profile():
+    guard = _require_active_subscription()
+    if guard:
+        return guard
+    return render_template('profile.html')
+
+
+@app.route('/profile/update', methods=['POST'])
+@login_required
+def profile_update():
+    guard = _require_active_subscription()
+    if guard:
+        return guard
+
+    new_name = request.form.get('name', '').strip()
+    if new_name:
+        current_user.name = new_name
+        db.session.commit()
+        flash('Profile updated successfully.', 'success')
+    else:
+        flash('Name cannot be empty.', 'error')
+
+    return redirect(url_for('profile'))
+
+
+@app.route('/profile/change-password', methods=['POST'])
+@login_required
+def profile_change_password():
+    guard = _require_active_subscription()
+    if guard:
+        return guard
+
+    from werkzeug.security import check_password_hash, generate_password_hash
+
+    current_pw  = request.form.get('current_password', '')
+    new_pw      = request.form.get('new_password', '')
+    confirm_pw  = request.form.get('confirm_password', '')
+
+    if not check_password_hash(current_user.password_hash, current_pw):
+        flash('Current password is incorrect.', 'error')
+        return redirect(url_for('profile'))
+
+    if len(new_pw) < 8:
+        flash('New password must be at least 8 characters.', 'error')
+        return redirect(url_for('profile'))
+
+    if new_pw != confirm_pw:
+        flash('New passwords do not match.', 'error')
+        return redirect(url_for('profile'))
+
+    current_user.password_hash = generate_password_hash(new_pw)
+    db.session.commit()
+    flash('Password changed successfully.', 'success')
+    return redirect(url_for('profile'))
+
+
+@app.route('/profile/delete-account', methods=['POST'])
+@login_required
+def profile_delete_account():
+    from flask_login import logout_user
+    user = current_user
+    logout_user()
+    # Delete applications first (FK constraint)
+    OneClickApplication.query.filter_by(user_id=user.id).delete()
+    db.session.delete(user)
+    db.session.commit()
+    flash('Your account has been deleted.', 'success')
+    return redirect(url_for('signup_view'))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PRICING
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/pricing')
 def pricing():
     return render_template('pricing.html')
 
 
-# ── Run ───────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# RUN
+# ─────────────────────────────────────────────────────────────────────────────
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

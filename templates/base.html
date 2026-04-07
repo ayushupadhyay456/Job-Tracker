@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- In base.html <head> -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-01VKBK6SS2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-01VKBK6SS2');
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PathHire{% endblock %}</title>
@@ -205,6 +213,65 @@
             transition: background 0.15s;
         }
         .upgrade-nudge a:hover { background: rgba(108,69,192,0.22); }
+
+        /* ── Plan expiry widget ── */
+        .plan-expiry-widget {
+            margin-top: 14px;
+            border-radius: var(--rs);
+            padding: 11px 12px;
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.03);
+        }
+        .pew-ok      { border-color: rgba(42,122,59,0.22); background: rgba(42,122,59,0.06); }
+        .pew-warn    { border-color: rgba(194,130,10,0.28); background: rgba(194,130,10,0.07); }
+        .pew-critical{ border-color: rgba(192,57,43,0.30); background: rgba(192,57,43,0.08); }
+
+        .pew-header {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.08em; margin-bottom: 7px;
+        }
+        .pew-ok .pew-header       { color: #3a9e56; }
+        .pew-warn .pew-header     { color: #c2820a; }
+        .pew-critical .pew-header { color: #c0392b; }
+
+        .pew-days {
+            display: flex; align-items: baseline; gap: 5px;
+            margin-bottom: 8px;
+        }
+        .pew-days strong {
+            font-size: 22px; font-weight: 700; line-height: 1;
+            letter-spacing: -0.04em;
+        }
+        .pew-days span { font-size: 11px; color: #7a6f66; }
+        .pew-ok .pew-days strong       { color: #3a9e56; }
+        .pew-warn .pew-days strong     { color: #c2820a; }
+        .pew-critical .pew-days strong { color: #c0392b; }
+
+        .pew-bar-track {
+            height: 3px; background: rgba(255,255,255,0.08);
+            border-radius: 4px; overflow: hidden; margin-bottom: 6px;
+        }
+        .pew-bar-fill {
+            height: 100%; border-radius: 4px;
+            transition: width 1s cubic-bezier(0.23,1,0.32,1);
+        }
+        .pew-ok .pew-bar-fill       { background: #3a9e56; }
+        .pew-warn .pew-bar-fill     { background: #c2820a; }
+        .pew-critical .pew-bar-fill { background: #c0392b; }
+
+        .pew-date {
+            font-size: 10px; color: #5a524a; margin-bottom: 4px;
+        }
+        .pew-renew-btn {
+            display: block; margin-top: 8px;
+            text-align: center; font-size: 10.5px; font-weight: 700;
+            padding: 5px 10px; border-radius: 5px;
+            background: rgba(108,69,192,0.15); color: #c5b8f0;
+            border: 1px solid rgba(108,69,192,0.25);
+            text-decoration: none; transition: background 0.15s;
+        }
+        .pew-renew-btn:hover { background: rgba(108,69,192,0.25); }
 
         /* Footer */
         .sidebar-foot {
@@ -491,9 +558,52 @@
             </svg>
             My Resume
         </a>
+        <a href="/applied" class="nav-item {% if request.path=='/applied' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+            Applied Jobs
+        </a>
+        <a href="/profile" class="nav-item {% if request.path=='/profile' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Profile
+        </a>
     </nav>
 
-    {# Upgrade nudge removed intentionally #}
+    {# ── Plan expiry widget ── #}
+    {% if current_user.subscription_end %}
+        {% set now_ts = now_timestamp() %}
+        {% set end_ts = current_user.subscription_end.timestamp() %}
+        {% set days_left = ((end_ts - now_ts) / 86400) | int %}
+        {% set pct = [[(days_left / plan_total_days(current_user.plan)) * 100, 0] | max, 100] | min %}
+        <div class="plan-expiry-widget
+            {% if days_left <= 5 %}pew-critical
+            {% elif days_left <= 14 %}pew-warn
+            {% else %}pew-ok{% endif %}">
+            <div class="pew-header">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span>Plan expires in</span>
+            </div>
+            <div class="pew-days">
+                <strong>{{ [days_left, 0] | max }}</strong>
+                <span>day{{ 's' if days_left != 1 else '' }} left</span>
+            </div>
+            <div class="pew-bar-track">
+                <div class="pew-bar-fill" style="width:{{ pct | round(1) }}%"></div>
+            </div>
+            <div class="pew-date">Renews {{ current_user.subscription_end.strftime('%d %b %Y') }}</div>
+            {% if days_left <= 14 %}
+            <a href="/pricing" class="pew-renew-btn">Renew Plan →</a>
+            {% endif %}
+        </div>
+    {% endif %}
 
     <div class="sidebar-foot">
         <a href="/logout" class="logout">

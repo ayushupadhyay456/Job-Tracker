@@ -162,26 +162,37 @@
         {% if current_user.resume_text and current_user.resume_text|trim %}
 
         <!-- ─ Score ring + overview ─ -->
+        {%- set ats_score = parsed.match_score if parsed and parsed.match_score is defined else 0 -%}
+        {%- set ring_offset = 251.2 - (251.2 * ats_score / 100) -%}
         <div class="card assess-top">
             <div class="assess-score-wrap">
-                <!-- SVG ring gauge -->
-               <svg class="ring-svg" viewBox="0 0 100 100">
-    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" stroke-width="7"/>
-    {% set current_score = parsed.match_score if parsed else 0 %}
-    {# 251.2 is the circumference. Offset = 251.2 * (1 - score/100) #}
-    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--accent)" stroke-width="7"
-            stroke-linecap="round"
-            stroke-dasharray="251.2"
-            stroke-dashoffset="{{ 251.2 * (1 - (current_score / 100)) }}"
-            transform="rotate(-90 50 50)"
-            class="ring-fill"/>
-    <text x="50" y="47" text-anchor="middle" class="ring-num">{{ current_score }}</text>
-    <text x="50" y="58" text-anchor="middle" class="ring-label">Score</text>
-</svg>
+                <!-- SVG ring gauge — driven by parsed.match_score (ATS quality score) -->
+                <svg class="ring-svg" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" stroke-width="7"/>
+                    <circle cx="50" cy="50" r="40" fill="none"
+                            stroke="{% if ats_score >= 70 %}#1a8a50{% elif ats_score >= 40 %}#c2820a{% else %}var(--accent){% endif %}"
+                            stroke-width="7" stroke-linecap="round"
+                            stroke-dasharray="251.2"
+                            stroke-dashoffset="{{ ring_offset | round(1) }}"
+                            transform="rotate(-90 50 50)"
+                            class="ring-fill"/>
+                    <text x="50" y="47" text-anchor="middle" class="ring-num">{{ ats_score }}</text>
+                    <text x="50" y="58" text-anchor="middle" class="ring-label">ATS Score</text>
+                </svg>
                 <div class="assess-summary">
                     <div class="assess-name">{{ current_user.name or 'Your Resume' }}</div>
                     <div class="assess-role-pill">{{ current_user.inferred_role or 'Software Engineer' }}</div>
-                    <p class="assess-blurb">Strong profile with solid technical depth. A few additions could significantly boost match quality.</p>
+                    <p class="assess-blurb">
+                        {% if parsed and parsed.ats_summary %}
+                            {{ parsed.ats_summary }}
+                        {% elif ats_score >= 70 %}
+                            Strong profile with good ATS compatibility. A few targeted improvements could make it exceptional.
+                        {% elif ats_score >= 40 %}
+                            Decent foundation. Adding quantified achievements and more keywords will noticeably boost your score.
+                        {% else %}
+                            Your resume needs structural improvements. Focus on formatting, keywords, and measurable impact.
+                        {% endif %}
+                    </p>
                 </div>
             </div>
         </div>
@@ -190,63 +201,164 @@
         <div class="card" style="padding:20px;">
             <div class="section-title">Profile Strength</div>
             <div class="bar-list">
+                {%- set tech_s = parsed.technical_skills if parsed and parsed.technical_skills is defined else 0 -%}
+                {%- set exp_s  = parsed.experience_score if parsed and parsed.experience_score is defined else 0 -%}
+                {%- set kw_s   = parsed.keywords_score   if parsed and parsed.keywords_score   is defined else 0 -%}
+                {%- set fmt_s  = parsed.formatting_score if parsed and parsed.formatting_score is defined else 0 -%}
                 <div class="bar-row">
                     <span class="bar-lbl">Technical Skills</span>
-                    <div class="bar-track"><div class="bar-fill" style="width:88%; --bc:var(--accent);"></div></div>
-                    <span class="bar-pct">88%</span>
+                    <div class="bar-track"><div class="bar-fill" style="width:{{ tech_s }}%; --bc:var(--accent);"></div></div>
+                    <span class="bar-pct">{{ tech_s }}%</span>
                 </div>
                 <div class="bar-row">
                     <span class="bar-lbl">Experience</span>
-                    <div class="bar-track"><div class="bar-fill" style="width:72%; --bc:#2a7a3b;"></div></div>
-                    <span class="bar-pct">72%</span>
+                    <div class="bar-track"><div class="bar-fill" style="width:{{ exp_s }}%; --bc:#2a7a3b;"></div></div>
+                    <span class="bar-pct">{{ exp_s }}%</span>
                 </div>
                 <div class="bar-row">
                     <span class="bar-lbl">Keywords</span>
-                    <div class="bar-track"><div class="bar-fill" style="width:65%; --bc:#7c5cbf;"></div></div>
-                    <span class="bar-pct">65%</span>
+                    <div class="bar-track"><div class="bar-fill" style="width:{{ kw_s }}%; --bc:#7c5cbf;"></div></div>
+                    <span class="bar-pct">{{ kw_s }}%</span>
                 </div>
                 <div class="bar-row">
                     <span class="bar-lbl">Formatting</span>
-                    <div class="bar-track"><div class="bar-fill" style="width:80%; --bc:#c2820a;"></div></div>
-                    <span class="bar-pct">80%</span>
+                    <div class="bar-track"><div class="bar-fill" style="width:{{ fmt_s }}%; --bc:#c2820a;"></div></div>
+                    <span class="bar-pct">{{ fmt_s }}%</span>
                 </div>
             </div>
         </div>
 
-        <!-- ─ Parsed resume content ─ -->
+        <!-- ─ What's Missing — detailed gap analysis ─ -->
         <div class="card" style="padding:20px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-                <div class="section-title" style="margin-bottom:0;">Extracted Content</div>
-                <span class="muted" style="font-size:11px;">From your PDF</span>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <div class="section-title" style="margin-bottom:0;">⚠ What Your Resume Is Missing</div>
+                {%- set total_gaps = (parsed.missing_details | length) if parsed and parsed.missing_details else 0 -%}
+                {% if total_gaps > 0 %}
+                <span class="gap-count-badge">{{ total_gaps }} gap{{ 's' if total_gaps != 1 else '' }}</span>
+                {% endif %}
             </div>
-            <div class="resume-scroll">{{ current_user.resume_text }}</div>
+
+            {% if parsed and parsed.missing_details and parsed.missing_details | length > 0 %}
+            <div class="gap-list">
+                {% for item in parsed.missing_details %}
+                <div class="gap-item gap-{{ item.severity }}">
+                    <div class="gap-header">
+                        <div class="gap-severity-dot"></div>
+                        <div class="gap-meta">
+                            <span class="gap-category">{{ item.category }}</span>
+                            <span class="gap-sev-label gap-sev-{{ item.severity }}">{{ item.severity | capitalize }}</span>
+                        </div>
+                    </div>
+                    <div class="gap-title">{{ item.title }}</div>
+                    <div class="gap-desc">{{ item.description }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if parsed and parsed.missing_keywords and parsed.missing_keywords | length > 0 %}
+            <div class="missing-kw-block">
+                <div class="mkw-label">Missing role keywords</div>
+                <div class="mkw-chips">
+                    {% for kw in parsed.missing_keywords %}
+                    <span class="mkw-chip">{{ kw }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% elif parsed and parsed.bullet_point_fix %}
+            <!-- Good resume — just show bullet tip -->
+            <div class="gap-item gap-medium">
+                <div class="gap-header">
+                    <div class="gap-severity-dot"></div>
+                    <div class="gap-meta">
+                        <span class="gap-category">Bullet Points</span>
+                        <span class="gap-sev-label gap-sev-medium">Tip</span>
+                    </div>
+                </div>
+                <div class="gap-title">Strengthen your bullet points</div>
+                <div class="gap-desc">{{ parsed.bullet_point_fix }}</div>
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:20px; color:var(--fg3); font-size:13px;">
+                ✅ No major gaps detected. Your resume looks well structured!
+            </div>
+            {% endif %}
         </div>
 
-        <!-- ─ Suggestions ─ -->
-        <div class="card" style="padding:20px;">
-            <div class="section-title">💡 Quick Wins</div>
-            <div class="sugg-list">
-                <div class="sugg-item sugg-warn">
-                    <div class="sugg-icon">⚠</div>
-                    <div>
-                        <div class="sugg-head">Add a LinkedIn URL</div>
-                        <div class="sugg-body">Recruiters are 3× more likely to shortlist profiles with an active LinkedIn link.</div>
-                    </div>
+        <!-- ─ AI Resume Improver ─ -->
+        <div class="card ai-improve-card" style="padding:20px;">
+            <div style="display:flex; align-items:flex-start; gap:14px; margin-bottom:16px;">
+                <div class="ai-improve-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
                 </div>
-                <div class="sugg-item sugg-tip">
-                    <div class="sugg-icon">✦</div>
-                    <div>
-                        <div class="sugg-head">Quantify achievements</div>
-                        <div class="sugg-body">Replace task descriptions with measurable impact (e.g. "reduced load time by 40%").</div>
-                    </div>
+                <div>
+                    <div class="ai-improve-title">AI Resume Booster</div>
+                    <div class="ai-improve-sub">Let AI rewrite your resume with stronger action verbs, quantified achievements, and better ATS keyword density — then download it as a PDF.</div>
                 </div>
-                <div class="sugg-item sugg-ok">
-                    <div class="sugg-icon">✓</div>
-                    <div>
-                        <div class="sugg-head">Technical skills section</div>
-                        <div class="sugg-body">Well structured. Your stack aligns with current remote job demand.</div>
-                    </div>
+            </div>
+
+            <div class="ai-improve-features">
+                <div class="aif-item">
+                    <span class="aif-dot"></span>
+                    Rewrites weak bullet points with impact verbs
                 </div>
+                <div class="aif-item">
+                    <span class="aif-dot"></span>
+                    Adds estimated metrics where missing
+                </div>
+                <div class="aif-item">
+                    <span class="aif-dot"></span>
+                    Adds professional summary if absent
+                </div>
+                <div class="aif-item">
+                    <span class="aif-dot"></span>
+                    Boosts keyword density for your role
+                </div>
+            </div>
+
+            <button id="improveBtn" class="btn btn-improve" onclick="improveResume()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                Improve My Resume with AI
+            </button>
+
+            <!-- Progress state -->
+            <div id="improveProgress" style="display:none; margin-top:14px;">
+                <div class="improve-progress-wrap">
+                    <div class="improve-spinner"></div>
+                    <span class="improve-progress-text" id="improveProgressText">Analysing your resume…</span>
+                </div>
+                <div class="improve-progress-bar">
+                    <div class="improve-progress-fill" id="improveProgressFill"></div>
+                </div>
+            </div>
+
+            <!-- Success state -->
+            <div id="improveSuccess" style="display:none; margin-top:14px;">
+                <div class="improve-success-msg">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Resume improved successfully!
+                </div>
+                <a id="improveDownloadBtn" href="/resume/download-improved" class="btn btn-download-improved">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download Improved Resume (PDF)
+                </a>
+                <div class="improve-note">* Estimated metrics are marked with an asterisk. Please review before sending.</div>
+            </div>
+
+            <!-- Error state -->
+            <div id="improveError" style="display:none; margin-top:10px;">
+                <div class="improve-error-msg" id="improveErrorText"></div>
             </div>
         </div>
 
@@ -304,30 +416,6 @@
     grid-template-columns: 380px 1fr;
     gap: 20px;
     align-items: start;
-}
-
-/* ── Responsive ── */
-@media (max-width: 900px) {
-    .rp-grid {
-        grid-template-columns: 1fr;
-    }
-    .rp-assess {
-        /* On tablet/mobile, assessment comes after upload */
-        order: 2;
-    }
-    .rp-upload {
-        order: 1;
-    }
-}
-
-@media (max-width: 480px) {
-    .feat-grid { grid-template-columns: 1fr; }
-    .assess-score-wrap { flex-direction: column; align-items: flex-start; gap: 12px; }
-    .ring-svg { width: 72px; height: 72px; }
-    .bar-lbl { width: 90px; font-size: 11px; }
-    .att-actions { flex-direction: column; gap: 6px; }
-    .att-actions form { width: 100%; }
-    .assess-empty { padding: 32px 16px; }
 }
 
 /* ── Upload card ── */
@@ -485,16 +573,173 @@
 @keyframes barIn { from { width: 0 !important; } }
 .bar-pct { font-size: 11px; font-weight: 600; color: var(--fg2); width: 32px; text-align: right; }
 
-/* Resume scroll */
-.resume-scroll {
-    background: var(--bg); border: 1px solid var(--line);
-    border-radius: var(--rs); padding: 14px 16px;
-    max-height: 200px; overflow-y: auto;
-    font-size: 12px; line-height: 1.7; color: var(--fg);
-    white-space: pre-wrap;
+/* Resume scroll - REMOVED */
+
+/* ── Gap analysis list ── */
+.gap-count-badge {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; padding: 2px 8px; border-radius: 4px;
+    background: rgba(192,57,43,0.1); color: #c0392b;
+    border: 1px solid rgba(192,57,43,0.2);
 }
 
-/* Suggestions */
+.gap-list { display: flex; flex-direction: column; gap: 10px; }
+
+.gap-item {
+    border-radius: var(--rs);
+    border: 1px solid transparent;
+    padding: 13px 14px;
+}
+.gap-critical { background: rgba(192,57,43,0.06); border-color: rgba(192,57,43,0.18); }
+.gap-high     { background: rgba(194,130,10,0.06); border-color: rgba(194,130,10,0.18); }
+.gap-medium   { background: rgba(124,92,191,0.06); border-color: rgba(124,92,191,0.18); }
+
+.gap-header {
+    display: flex; align-items: center; gap: 7px; margin-bottom: 5px;
+}
+.gap-severity-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+}
+.gap-critical .gap-severity-dot { background: #c0392b; }
+.gap-high     .gap-severity-dot { background: #c2820a; }
+.gap-medium   .gap-severity-dot { background: #7c5cbf; }
+
+.gap-meta { display: flex; align-items: center; gap: 6px; flex: 1; }
+.gap-category {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--fg2);
+}
+.gap-sev-label {
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; padding: 1px 6px; border-radius: 3px;
+}
+.gap-sev-critical { background: rgba(192,57,43,0.12); color: #c0392b; }
+.gap-sev-high     { background: rgba(194,130,10,0.12); color: #c2820a; }
+.gap-sev-medium   { background: rgba(124,92,191,0.12); color: #7c5cbf; }
+
+.gap-title {
+    font-size: 13px; font-weight: 600; color: var(--dark);
+    margin-bottom: 4px; letter-spacing: -0.01em;
+}
+.gap-desc {
+    font-size: 11.5px; color: var(--fg2); line-height: 1.6;
+}
+
+/* Missing keyword chips */
+.missing-kw-block {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid var(--line);
+}
+.mkw-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--fg3); margin-bottom: 8px;
+}
+.mkw-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mkw-chip {
+    display: inline-flex; align-items: center;
+    background: rgba(194,130,10,0.08); color: #a06a08;
+    border: 1px solid rgba(194,130,10,0.22);
+    padding: 3px 9px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+}
+
+/* ── AI Improve card ── */
+.ai-improve-card {
+    background: linear-gradient(135deg, #fff 60%, rgba(217,82,21,0.03));
+    border-color: rgba(217,82,21,0.12) !important;
+}
+.ai-improve-icon {
+    width: 40px; height: 40px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), #a33a0e);
+    border-radius: 10px; display: grid; place-items: center;
+    color: #fff;
+}
+.ai-improve-title {
+    font-size: 14px; font-weight: 700; color: var(--dark);
+    letter-spacing: -0.02em; margin-bottom: 4px;
+}
+.ai-improve-sub {
+    font-size: 12px; color: var(--fg2); line-height: 1.55;
+}
+.ai-improve-features {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px; margin-bottom: 16px;
+    padding: 12px; background: var(--bg);
+    border-radius: var(--rs); border: 1px solid var(--line);
+}
+.aif-item {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 11.5px; color: var(--fg2);
+}
+.aif-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0;
+}
+
+.btn-improve {
+    width: 100%; padding: 12px;
+    background: linear-gradient(135deg, var(--accent), #a33a0e);
+    font-size: 13.5px; font-weight: 700;
+    border-radius: var(--rs); justify-content: center;
+    letter-spacing: -0.01em;
+}
+.btn-improve:hover {
+    background: linear-gradient(135deg, #c44a12, #8a3209);
+    box-shadow: 0 6px 24px rgba(217,82,21,0.35);
+}
+
+/* Progress */
+.improve-progress-wrap {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+}
+.improve-spinner {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid rgba(217,82,21,0.2);
+    border-top-color: var(--accent);
+    animation: spin 0.7s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.improve-progress-text { font-size: 12.5px; color: var(--fg2); }
+.improve-progress-bar {
+    height: 3px; background: var(--bg2); border-radius: 4px; overflow: hidden;
+}
+.improve-progress-fill {
+    height: 100%; background: var(--accent); border-radius: 4px;
+    transition: width 0.6s ease;
+    animation: progressPulse 2s ease infinite;
+}
+@keyframes progressPulse {
+    0%   { width: 10%; }
+    50%  { width: 80%; }
+    100% { width: 95%; }
+}
+
+/* Success */
+.improve-success-msg {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12.5px; font-weight: 600; color: #2a7a3b;
+    margin-bottom: 10px;
+}
+.btn-download-improved {
+    width: 100%; padding: 12px; font-size: 13px; font-weight: 700;
+    background: #1a6e32; justify-content: center;
+    border-radius: var(--rs); letter-spacing: -0.01em;
+}
+.btn-download-improved:hover {
+    background: #145c28; box-shadow: 0 4px 16px rgba(26,110,50,0.3);
+}
+.improve-note {
+    font-size: 10.5px; color: var(--fg3); margin-top: 8px;
+    line-height: 1.5; font-style: italic;
+}
+.improve-error-msg {
+    font-size: 12px; color: #c0392b;
+    background: rgba(192,57,43,0.07); border: 1px solid rgba(192,57,43,0.18);
+    border-radius: var(--rs); padding: 10px 12px;
+}
+
+/* Suggestions (kept for fallback) */
 .sugg-list { display: flex; flex-direction: column; gap: 10px; }
 .sugg-item {
     display: flex; align-items: flex-start; gap: 10px;
@@ -504,10 +749,7 @@
 .sugg-warn { background: rgba(194,130,10,0.07); border-color: rgba(194,130,10,0.18); }
 .sugg-tip  { background: rgba(124,92,191,0.07); border-color: rgba(124,92,191,0.18); }
 .sugg-ok   { background: rgba(42,122,59,0.07);  border-color: rgba(42,122,59,0.18); }
-.sugg-icon {
-    font-size: 12px; font-weight: 700; margin-top: 1px;
-    flex-shrink: 0; width: 18px;
-}
+.sugg-icon { font-size: 12px; font-weight: 700; margin-top: 1px; flex-shrink: 0; width: 18px; }
 .sugg-warn .sugg-icon { color: #c2820a; }
 .sugg-tip  .sugg-icon { color: #7c5cbf; }
 .sugg-ok   .sugg-icon { color: #2a7a3b; }
@@ -567,6 +809,58 @@
         }
     });
 })();
+
+async function improveResume() {
+    const btn      = document.getElementById('improveBtn');
+    const progress = document.getElementById('improveProgress');
+    const success  = document.getElementById('improveSuccess');
+    const errDiv   = document.getElementById('improveError');
+    const errText  = document.getElementById('improveErrorText');
+    const progText = document.getElementById('improveProgressText');
+
+    // Reset states
+    success.style.display = 'none';
+    errDiv.style.display  = 'none';
+    btn.style.display     = 'none';
+    progress.style.display = 'block';
+
+    const steps = [
+        'Analysing your resume…',
+        'Rewriting bullet points with impact verbs…',
+        'Adding quantified achievements…',
+        'Boosting ATS keyword density…',
+        'Generating improved PDF…',
+    ];
+    let stepIdx = 0;
+    const stepTimer = setInterval(() => {
+        stepIdx = (stepIdx + 1) % steps.length;
+        progText.textContent = steps[stepIdx];
+    }, 2200);
+
+    try {
+        const resp = await fetch('/resume/improve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await resp.json();
+        clearInterval(stepTimer);
+        progress.style.display = 'none';
+
+        if (data.ok) {
+            success.style.display = 'block';
+        } else {
+            errText.textContent = data.error || 'Something went wrong. Please try again.';
+            errDiv.style.display  = 'block';
+            btn.style.display     = '';
+        }
+    } catch (e) {
+        clearInterval(stepTimer);
+        progress.style.display = 'none';
+        errText.textContent    = 'Network error. Please check your connection and try again.';
+        errDiv.style.display   = 'block';
+        btn.style.display      = '';
+    }
+}
 </script>
 
 {% endblock %}

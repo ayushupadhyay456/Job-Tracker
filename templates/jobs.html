@@ -343,6 +343,288 @@
   .jcard:nth-child(9)  { animation-delay:.27s; }
   .jcard:nth-child(10) { animation-delay:.30s; }
 
+  /* ── btn-ext (small external-link icon button) ── */
+  .btn-ext {
+    width:40px; height:40px;
+    display:grid; place-items:center;
+    border:1.5px solid var(--line); border-radius:9px;
+    background:var(--surface); cursor:pointer;
+    transition:all .15s; flex-shrink:0; text-decoration:none;
+  }
+  .btn-ext:hover { border-color:var(--a25); background:var(--a12); }
+  .btn-ext svg { width:11px; height:11px; stroke:var(--fg3); fill:none; stroke-width:2.2; stroke-linecap:round; transition:stroke .15s; }
+  .btn-ext:hover svg { stroke:var(--accent); }
+
+  /* ── Applied badge on card ── */
+  .applied-badge {
+    display:none; align-items:center; gap:5px;
+    font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:#1f7a3b; background:rgba(31,122,59,.10); border:1px solid rgba(31,122,59,.2);
+    padding:3px 9px; border-radius:5px;
+  }
+  .jcard.is-applied .applied-badge  { display:inline-flex; }
+  .jcard.is-applied .btn-one-click  { opacity:.5; pointer-events:none; }
+
+  /* ── One-Click Apply Modal overlay ── */
+  .oca-overlay {
+    position:fixed; inset:0; z-index:1000;
+    background:rgba(0,0,0,.45); backdrop-filter:blur(3px);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none;
+    transition:opacity .22s;
+  }
+  .oca-overlay.open { opacity:1; pointer-events:all; }
+
+  .oca-modal {
+    background:var(--surface); border:1.5px solid var(--line);
+    border-radius:18px; box-shadow:0 24px 64px rgba(0,0,0,.22);
+    width:min(560px, calc(100vw - 32px));
+    max-height:calc(100vh - 48px);
+    display:flex; flex-direction:column;
+    transform:translateY(16px) scale(.98);
+    transition:transform .25s cubic-bezier(.23,1,.32,1);
+    overflow:hidden;
+  }
+  .oca-overlay.open .oca-modal { transform:translateY(0) scale(1); }
+
+  .oca-head {
+    padding:20px 22px 16px;
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:flex-start; gap:12px;
+  }
+  .oca-logo {
+    width:44px; height:44px; border-radius:10px; flex-shrink:0;
+    background:var(--bg); border:1px solid var(--line);
+    display:grid; place-items:center;
+    font-size:18px; font-weight:700; color:var(--fg2);
+  }
+  .oca-head-text { flex:1; min-width:0; }
+  .oca-title    { font-size:15px; font-weight:700; letter-spacing:-.02em; color:var(--dark); line-height:1.3; }
+  .oca-company  { font-size:12px; color:var(--fg2); margin-top:2px; }
+  .oca-close {
+    width:32px; height:32px; border-radius:8px; flex-shrink:0;
+    border:1px solid var(--line); background:none; cursor:pointer;
+    display:grid; place-items:center;
+    transition:background .14s, border-color .14s;
+  }
+  .oca-close:hover { background:var(--bg); border-color:rgba(0,0,0,.15); }
+  .oca-close svg { width:12px; height:12px; stroke:var(--fg2); fill:none; stroke-width:2.5; stroke-linecap:round; }
+
+  .oca-body { padding:18px 22px; overflow-y:auto; flex:1; }
+
+  .oca-section-label {
+    font-size:9.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--fg3); margin-bottom:8px; display:flex; align-items:center; gap:6px;
+  }
+  .oca-section-label::after { content:''; flex:1; height:1px; background:var(--line); }
+
+  .oca-generating {
+    display:flex; align-items:center; gap:10px;
+    padding:18px; border-radius:10px;
+    background:var(--bg); border:1px solid var(--line);
+    font-size:12.5px; color:var(--fg2); margin-bottom:4px;
+  }
+  .oca-spinner {
+    width:16px; height:16px; flex-shrink:0;
+    border:2px solid var(--line); border-top-color:var(--accent);
+    border-radius:50%; animation:spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .oca-cl {
+    width:100%; min-height:160px; max-height:260px;
+    border:1.5px solid var(--line); border-radius:10px;
+    padding:12px 14px; resize:vertical; overflow-y:auto;
+    font-family:'Geist',sans-serif; font-size:12.5px;
+    line-height:1.65; color:var(--fg);
+    background:var(--surface); outline:none;
+    transition:border-color .15s, box-shadow .15s;
+    box-sizing:border-box;
+  }
+  .oca-cl:focus { border-color:var(--a25); box-shadow:0 0 0 3px rgba(217,82,21,.07); }
+  .oca-cl-hint  { font-size:10.5px; color:var(--fg3); margin-top:5px; }
+
+  .oca-info-row {
+    display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .oca-info-pill {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; color:var(--fg2);
+    background:var(--bg); border:1px solid var(--line);
+    padding:4px 10px; border-radius:100px;
+  }
+  .oca-info-pill svg { width:9px; height:9px; stroke:var(--fg3); fill:none; stroke-width:2; stroke-linecap:round; flex-shrink:0; }
+  .oca-info-pill.match { color:#1f7a3b; background:rgba(31,122,59,.08); border-color:rgba(31,122,59,.2); }
+  .oca-info-pill.match svg { stroke:#1f7a3b; }
+
+  .oca-foot {
+    padding:14px 22px 18px;
+    border-top:1px solid var(--line);
+    display:flex; gap:10px; align-items:center;
+  }
+  .oca-btn-confirm {
+    flex:1; padding:11px 0;
+    background:linear-gradient(135deg,var(--dark),var(--accent));
+    color:#fff; border:none; border-radius:9px;
+    font-family:'Geist',sans-serif; font-size:13.5px; font-weight:700;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px;
+    transition:opacity .15s, transform .12s, box-shadow .15s;
+  }
+  .oca-btn-confirm:hover:not(:disabled) { opacity:.92; box-shadow:0 4px 16px var(--a25); transform:translateY(-1px); }
+  .oca-btn-confirm:disabled { opacity:.5; cursor:not-allowed; }
+  .oca-btn-confirm svg { width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; }
+
+  .oca-btn-cancel {
+    padding:11px 18px;
+    background:var(--bg); color:var(--fg2);
+    border:1.5px solid var(--line); border-radius:9px;
+    font-family:'Geist',sans-serif; font-size:13px; font-weight:600;
+    cursor:pointer; transition:all .14s;
+  }
+  .oca-btn-cancel:hover { border-color:rgba(0,0,0,.2); color:var(--dark); }
+
+  .oca-toast {
+    margin:0 22px 14px;
+    padding:10px 14px; border-radius:9px;
+    font-size:12.5px; font-weight:500; display:none;
+    align-items:center; gap:8px;
+  }
+  .oca-toast.success { background:rgba(31,122,59,.1); border:1px solid rgba(31,122,59,.25); color:#155c2e; }
+  .oca-toast.error   { background:rgba(201,48,48,.08); border:1px solid rgba(201,48,48,.2);  color:#8b1c1c; }
+  .oca-toast.show    { display:flex; }
+
+  /* ── Application tracker panel ── */
+  .tracker-wrap {
+    margin-top:32px;
+    background:var(--surface); border:1.5px solid var(--line);
+    border-radius:14px; overflow:hidden;
+  }
+  .tracker-head {
+    padding:16px 20px;
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .tracker-head h2 {
+    font-size:14px; font-weight:700; letter-spacing:-.02em; color:var(--dark);
+    display:flex; align-items:center; gap:8px; margin:0;
+  }
+  .tracker-count {
+    font-size:10px; font-weight:700; background:var(--accent); color:#fff;
+    padding:2px 7px; border-radius:20px;
+  }
+  .tracker-empty { padding:32px; text-align:center; font-size:12.5px; color:var(--fg3); }
+  .tracker-row {
+    display:grid;
+    grid-template-columns: 1fr 1fr auto auto;
+    gap:12px; align-items:center;
+    padding:12px 20px;
+    border-bottom:1px solid var(--line);
+    font-size:12.5px; transition:background .12s;
+  }
+  .tracker-row:last-child { border-bottom:none; }
+  .tracker-row:hover { background:var(--bg); }
+  .tracker-job  { font-weight:600; color:var(--dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tracker-co   { color:var(--fg2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tracker-date { font-size:11px; color:var(--fg3); white-space:nowrap; }
+  .tracker-status-sel {
+    font-family:'Geist',sans-serif; font-size:11px; font-weight:600;
+    border:1px solid var(--line); border-radius:6px;
+    padding:3px 7px; background:var(--surface); color:var(--dark);
+    cursor:pointer; outline:none; transition:border-color .14s;
+  }
+  .tracker-status-sel:focus { border-color:var(--a25); }
+  .status-Applied      { color:#1f7a3b; background:rgba(31,122,59,.08);  border-color:rgba(31,122,59,.25); }
+  .status-Interviewing { color:#1849a9; background:rgba(24,73,169,.08);  border-color:rgba(24,73,169,.25); }
+  .status-Offered      { color:#854F0B; background:rgba(186,117,23,.1);  border-color:rgba(186,117,23,.3); }
+  .status-Rejected     { color:#8b1c1c; background:rgba(201,48,48,.08);  border-color:rgba(201,48,48,.25); }
+  .status-Withdrawn    { color:var(--fg3); background:var(--bg); }
+
+  /* ── Plan Details + ATS Download row ── */
+  .plan-ats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 32px;
+    margin-bottom: 0;
+  }
+  .plan-card {
+    background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: 14px; padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .plan-card-head {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .plan-card-icon {
+    width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+    background: var(--a12); border: 1px solid var(--a25);
+    display: grid; place-items: center; color: var(--accent);
+  }
+  .plan-card-title { font-size: 13px; font-weight: 700; letter-spacing: -.02em; color: var(--dark); }
+  .plan-card-sub   { font-size: 11px; color: var(--fg3); margin-top: 1px; }
+  .plan-badge {
+    margin-left: auto; white-space: nowrap; flex-shrink: 0;
+    font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 5px; border: 1px solid transparent;
+  }
+
+  .plan-details-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .plan-detail-item {
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 9px; padding: 10px 12px;
+  }
+  .plan-detail-label { font-size: 9.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--fg3); margin-bottom: 4px; }
+  .plan-detail-val   { font-size: 13px; font-weight: 700; letter-spacing: -.02em; color: var(--dark); }
+  .pval-green { color: #1f7a3b !important; }
+  .pval-warn  { color: #c2820a !important; }
+
+  .plan-upgrade-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 0; border-radius: 9px; text-decoration: none;
+    background: var(--dark); color: #fff;
+    font-family: 'Geist', sans-serif; font-size: 12.5px; font-weight: 600;
+    transition: background .15s, transform .12s, box-shadow .15s;
+  }
+  .plan-upgrade-btn:hover { background: var(--accent); box-shadow: 0 4px 14px var(--a25); transform: translateY(-1px); }
+
+  /* ATS download card specifics */
+  .ats-dl-delta {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px;
+  }
+  .ats-dl-score { text-align: center; }
+  .ats-dl-num { font-size: 1.7rem; font-weight: 800; letter-spacing: -.04em; color: var(--dark); line-height: 1; }
+  .ats-dl-lbl { font-size: 9.5px; color: var(--fg3); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-top: 3px; }
+  .ats-dl-gain {
+    font-size: 11px; font-weight: 700; color: #1f7a3b;
+    background: rgba(31,122,59,.1); border: 1px solid rgba(31,122,59,.25);
+    padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+  }
+  .ats-dl-btn {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 10px 0; border-radius: 9px; text-decoration: none;
+    background: rgba(31,122,59,.1); color: #1f7a3b;
+    border: 1.5px solid rgba(31,122,59,.3);
+    font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600;
+    transition: background .15s, box-shadow .15s, transform .12s;
+    margin-top: auto;
+  }
+  .ats-dl-btn:hover { background: rgba(31,122,59,.18); box-shadow: 0 4px 14px rgba(31,122,59,.2); transform: translateY(-1px); }
+  .ats-dl-empty { font-size: 12px; color: var(--fg2); line-height: 1.6; margin: 0; }
+  .ats-dl-empty a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .ats-dl-empty a:hover { text-decoration: underline; }
+
+  @media (max-width: 700px) {
+    .plan-ats-row { grid-template-columns: 1fr; }
+    .plan-details-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .plan-details-grid { grid-template-columns: 1fr; }
+  }
+
   /* ── Responsive ── */
   @media (max-width:900px) {
     .stat-row { grid-template-columns:repeat(2,1fr); }
@@ -353,16 +635,19 @@
     .g-auto    { grid-template-columns:1fr; }
     .ph-title  { font-size:22px; }
     .search-wrap { max-width:100%; flex:1; }
-
-    .filters-row {
-      gap: 6px;
-    }
+    .filters-row { gap: 6px; }
     .fchip { font-size:11px; padding:5px 10px; }
     .res-count { display:none; }
-
-    /* Stack meta strip on mobile */
     .meta-strip { flex-wrap:wrap; gap:8px; }
     .meta-strip .sep { display:none; }
+
+    /* tracker collapses to 2 cols on tablet */
+    .tracker-row {
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+    }
+    .tracker-co   { grid-column:1; color:var(--fg3); font-size:11px; }
+    .tracker-date { display:none; }
   }
 
   @media (max-width:480px) {
@@ -383,6 +668,22 @@
       width:100%;
       justify-content:center;
     }
+
+    /* modal full-screen on mobile */
+    .oca-modal {
+      width:100vw; max-height:100vh;
+      border-radius:18px 18px 0 0;
+      position:fixed; bottom:0; left:0; right:0;
+    }
+    .oca-overlay { align-items:flex-end; }
+
+    /* tracker single col */
+    .tracker-row {
+      grid-template-columns: 1fr;
+      gap:6px;
+    }
+    .tracker-date { display:none; }
+    .tracker-status-sel { width:fit-content; }
   }
 </style>
 
@@ -437,9 +738,9 @@
     <div class="sdesc">Across all listings</div>
   </div>
   <div class="stat-card">
-    <div class="slabel">Saved</div>
-    <div class="sval" id="saved-count-display">{{ saved_ct }}</div>
-    <div class="sdesc">Bookmarked jobs</div>
+    <div class="slabel">Applied</div>
+    <div class="sval" id="applied-count-display" style="color:#1849a9;">0</div>
+    <div class="sdesc">1-click applications</div>
   </div>
 </div>
 {% endif %}
@@ -530,6 +831,7 @@
       <div class="card-badges">
         {% if score >= 80 %}<span class="badge-top">Top Pick</span>{% endif %}
         <span class="remote-tag">Remote</span>
+        <span class="applied-badge">✓ Applied</span>
         <span class="saved-tag">♥ Saved</span>
       </div>
     </div>
@@ -612,8 +914,21 @@
 
     <!-- actions -->
     <div class="card-actions">
-      <a href="{{ job.url or '#' }}" target="_blank" rel="noopener" class="btn-apply">
-        Apply Now
+      <button class="btn-apply btn-one-click"
+              onclick="openApplyModal(this)"
+              data-title="{{ job.title|e }}"
+              data-company="{{ job.company|e }}"
+              data-jobid="{{ job.id | default('') }}"
+              data-url="{{ job.url or '#' }}"
+              data-location="{{ job.location|default('')|e }}"
+              data-source="{{ job.source|default('')|e }}"
+              data-score="{{ score }}"
+              data-desc="{{ job.description|default('')|truncate(400)|e }}">
+        <svg viewBox="0 0 11 11" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;"><path d="M5.5 1v7M2 4.5l3.5-3.5 3.5 3.5M1.5 10h8"/></svg>
+        1-Click Apply
+      </button>
+      <a href="{{ job.url or '#' }}" target="_blank" rel="noopener"
+         class="btn-ext" title="View original listing">
         <svg viewBox="0 0 11 11"><path d="M1.5 9.5L9.5 1.5M9.5 1.5H4M9.5 1.5V7"/></svg>
       </a>
       <button class="btn-save {{ 'active' if saved else '' }}"
@@ -673,7 +988,6 @@
     card.classList.toggle('is-saved', isSaved);
     btn.title = isSaved ? 'Unsave' : 'Save job';
 
-    // Update saved count in stat card
     const display = document.getElementById('saved-count-display');
     if (display) {
       const count = document.querySelectorAll('.jcard[data-saved="y"]').length;
@@ -682,7 +996,6 @@
 
     filterCards();
 
-    // Persist to server
     const jobId = card.dataset.jobid;
     if (jobId) {
       fetch('/jobs/save', {
@@ -703,6 +1016,426 @@
       ? 'Show less '
       : '+' + count + ' more tips ';
   }
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ONE-CLICK APPLY MODAL
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="oca-overlay" id="ocaOverlay" onclick="handleOverlayClick(event)">
+  <div class="oca-modal" role="dialog" aria-modal="true" aria-labelledby="ocaTitle">
+
+    <!-- Header -->
+    <div class="oca-head">
+      <div class="oca-logo" id="ocaLogo">?</div>
+      <div class="oca-head-text">
+        <div class="oca-title" id="ocaTitle">Job Title</div>
+        <div class="oca-company" id="ocaCompany">Company</div>
+      </div>
+      <button class="oca-close" onclick="closeApplyModal()" aria-label="Close">
+        <svg viewBox="0 0 12 12"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg>
+      </button>
+    </div>
+
+    <!-- Info pills -->
+    <div class="oca-body">
+      <div class="oca-info-row" id="ocaInfoRow"></div>
+
+      <!-- Cover letter section -->
+      <div class="oca-section-label">AI Cover Letter</div>
+
+      <!-- Generating spinner -->
+      <div class="oca-generating" id="ocaGenerating">
+        <div class="oca-spinner"></div>
+        <span>Generating personalised cover letter…</span>
+      </div>
+
+      <!-- Editable textarea (shown after generation) -->
+      <textarea class="oca-cl" id="ocaCl" style="display:none"
+                placeholder="Your cover letter will appear here…"></textarea>
+      <div class="oca-cl-hint" id="ocaClHint" style="display:none">
+        ✏️ You can edit this before submitting.
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="oca-toast" id="ocaToast"></div>
+
+    <!-- Footer -->
+    <div class="oca-foot">
+      <button class="oca-btn-cancel" onclick="closeApplyModal()">Cancel</button>
+      <button class="oca-btn-confirm" id="ocaConfirmBtn" disabled onclick="confirmApply()">
+        <svg viewBox="0 0 11 11"><path d="M5.5 1v7M2 4.5l3.5-3.5 3.5 3.5M1.5 10h8"/></svg>
+        Confirm & Apply
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PLAN DETAILS + ATS DOWNLOAD  (shown to all logged-in users)
+     ══════════════════════════════════════════════════════════════════════════ -->
+{% if plan_info %}
+<div class="plan-ats-row">
+
+  <!-- ── Plan card ── -->
+  <div class="plan-card">
+    <div class="plan-card-head">
+      <div class="plan-card-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+      </div>
+      <div>
+        <div class="plan-card-title">Your Plan</div>
+        <div class="plan-card-sub">Subscription details</div>
+      </div>
+      <span class="plan-badge" style="background:{{ plan_info.colour }}20; color:{{ plan_info.colour }}; border-color:{{ plan_info.colour }}40;">
+        {{ plan_info.label }}
+      </span>
+    </div>
+
+    <div class="plan-details-grid">
+      <div class="plan-detail-item">
+        <div class="plan-detail-label">Status</div>
+        <div class="plan-detail-val {% if plan_info.status == 'active' %}pval-green{% else %}pval-warn{% endif %}">
+          {% if plan_info.status == 'active' %}● Active{% else %}○ {{ plan_info.status|title }}{% endif %}
+        </div>
+      </div>
+      <div class="plan-detail-item">
+        <div class="plan-detail-label">AI Score Limit</div>
+        <div class="plan-detail-val">{{ plan_info.score_limit }} / month</div>
+      </div>
+      {% if plan_info.ends %}
+      <div class="plan-detail-item">
+        <div class="plan-detail-label">Renews / Ends</div>
+        <div class="plan-detail-val">{{ plan_info.ends }}</div>
+      </div>
+      {% endif %}
+      {% if plan_info.days_left is not none %}
+      <div class="plan-detail-item">
+        <div class="plan-detail-label">Days Left</div>
+        <div class="plan-detail-val {% if plan_info.days_left <= 7 %}pval-warn{% endif %}">
+          {{ plan_info.days_left }} day{% if plan_info.days_left != 1 %}s{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <a href="/pricing" class="plan-upgrade-btn">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="17 11 12 6 7 11"/><line x1="12" y1="18" x2="12" y2="6"/></svg>
+      Upgrade Plan
+    </a>
+  </div>
+
+  <!-- ── ATS Download card ── -->
+  <div class="plan-card ats-dl-card">
+    <div class="plan-card-head">
+      <div class="plan-card-icon" style="background:rgba(31,122,59,.1); border-color:rgba(31,122,59,.22); color:#1f7a3b;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+      </div>
+      <div>
+        <div class="plan-card-title">ATS Resume</div>
+        <div class="plan-card-sub">Download your optimised PDF</div>
+      </div>
+      {% if plan_info.has_ats %}
+      <span class="plan-badge" style="background:rgba(31,122,59,.1);color:#1f7a3b;border-color:rgba(31,122,59,.3);">Ready</span>
+      {% else %}
+      <span class="plan-badge" style="background:var(--bg);color:var(--fg3);border-color:var(--line);">Not yet</span>
+      {% endif %}
+    </div>
+
+    {% if plan_info.has_ats and plan_info.ats_score_before is not none %}
+    <div class="ats-dl-delta">
+      <div class="ats-dl-score">
+        <div class="ats-dl-num">{{ plan_info.ats_score_before }}</div>
+        <div class="ats-dl-lbl">Before</div>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      <div class="ats-dl-score">
+        <div class="ats-dl-num" style="color:#1f7a3b;">{{ plan_info.ats_score_after }}</div>
+        <div class="ats-dl-lbl">After</div>
+      </div>
+      <div class="ats-dl-gain">+{{ plan_info.ats_score_after - plan_info.ats_score_before }} pts</div>
+    </div>
+    {% endif %}
+
+    {% if plan_info.has_ats %}
+    <a href="/resume/ats-download" class="ats-dl-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download PDF Resume
+    </a>
+    {% else %}
+    <p class="ats-dl-empty">Go to <a href="/resume">My Resume</a> and use the ATS Booster to generate your optimised resume, then download it here.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endif %}
+{% if has_resume %}
+<div class="tracker-wrap" id="trackerWrap" style="display:none">
+  <div class="tracker-head">
+    <h2>
+      My Applications
+      <span class="tracker-count" id="trackerCount">0</span>
+    </h2>
+  </div>
+  <div class="tracker-body" id="trackerBody">
+    <div class="tracker-empty">No applications yet. Hit "1-Click Apply" on any job!</div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   ONE-CLICK APPLY  — modal logic
+   ════════════════════════════════════════════════════════════════════ */
+
+let _currentJob = {};   // holds job data while modal is open
+
+function openApplyModal(btn) {
+  _currentJob = {
+    title:    btn.dataset.title,
+    company:  btn.dataset.company,
+    jobId:    btn.dataset.jobid,
+    url:      btn.dataset.url,
+    location: btn.dataset.location,
+    source:   btn.dataset.source,
+    score:    btn.dataset.score,
+    desc:     btn.dataset.desc,
+    _card:    btn.closest('.jcard'),
+  };
+
+  // Populate header
+  document.getElementById('ocaTitle').textContent   = _currentJob.title;
+  document.getElementById('ocaCompany').textContent = _currentJob.company;
+  document.getElementById('ocaLogo').textContent    = (_currentJob.company[0] || '?').toUpperCase();
+
+  // Info pills
+  const pills = [];
+  if (_currentJob.location) {
+    pills.push(`<span class="oca-info-pill">
+      <svg viewBox="0 0 10 10"><path d="M5 1a3 3 0 010 6C3 7 1 5.5 1 4a4 4 0 018 0c0 1.5-2 3-4 6z"/></svg>
+      ${escHtml(_currentJob.location)}</span>`);
+  }
+  if (_currentJob.source) {
+    pills.push(`<span class="oca-info-pill">
+      <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/><line x1="5" y1="3" x2="5" y2="6"/><circle cx="5" cy="7.5" r=".5" fill="currentColor"/></svg>
+      ${escHtml(_currentJob.source)}</span>`);
+  }
+  if (_currentJob.score && parseInt(_currentJob.score) > 0) {
+    pills.push(`<span class="oca-info-pill match">
+      <svg viewBox="0 0 10 10"><polyline points="1,6 3.5,9 9,2"/></svg>
+      ${escHtml(_currentJob.score)}% match</span>`);
+  }
+  document.getElementById('ocaInfoRow').innerHTML = pills.join('');
+
+  // Reset state
+  hideToast();
+  document.getElementById('ocaGenerating').style.display = 'flex';
+  document.getElementById('ocaCl').style.display         = 'none';
+  document.getElementById('ocaClHint').style.display     = 'none';
+  document.getElementById('ocaConfirmBtn').disabled      = true;
+
+  // Open overlay
+  document.getElementById('ocaOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Fetch cover letter
+  fetch('/jobs/apply/preview', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      job_title:   _currentJob.title,
+      company:     _currentJob.company,
+      description: _currentJob.desc,
+    }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('ocaGenerating').style.display = 'none';
+    if (data.ok) {
+      const ta = document.getElementById('ocaCl');
+      ta.value = data.cover_letter;
+      ta.style.display = 'block';
+      document.getElementById('ocaClHint').style.display = 'block';
+      document.getElementById('ocaConfirmBtn').disabled  = false;
+    } else {
+      showToast('error', '⚠ Could not generate cover letter: ' + (data.error || 'unknown error'));
+    }
+  })
+  .catch(err => {
+    document.getElementById('ocaGenerating').style.display = 'none';
+    showToast('error', '⚠ Network error. Please try again.');
+    console.error(err);
+  });
+}
+
+function closeApplyModal() {
+  document.getElementById('ocaOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('ocaOverlay')) closeApplyModal();
+}
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeApplyModal();
+});
+
+async function confirmApply() {
+  const btn         = document.getElementById('ocaConfirmBtn');
+  const coverLetter = document.getElementById('ocaCl').value.trim();
+  btn.disabled = true;
+  btn.innerHTML = '<div class="oca-spinner" style="width:14px;height:14px;border-width:2px;border-top-color:#fff"></div> Submitting…';
+
+  try {
+    const res = await fetch('/jobs/apply/confirm', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        job_title:    _currentJob.title,
+        company:      _currentJob.company,
+        job_id:       _currentJob.jobId,
+        job_url:      _currentJob.url,
+        location:     _currentJob.location,
+        source:       _currentJob.source,
+        match_score:  _currentJob.score,
+        cover_letter: coverLetter,
+      }),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      const msg = data.already_applied
+        ? '✓ You already applied to this job.'
+        : '✓ Application recorded! Opening job page…';
+      showToast('success', msg);
+
+      // Mark card as applied
+      if (_currentJob._card) {
+        _currentJob._card.classList.add('is-applied');
+      }
+
+      // Refresh tracker
+      loadApplications();
+
+      // Auto-open original posting after short delay
+      setTimeout(() => {
+        if (_currentJob.url && _currentJob.url !== '#') {
+          window.open(_currentJob.url, '_blank', 'noopener');
+        }
+        closeApplyModal();
+      }, 1600);
+    } else {
+      showToast('error', '⚠ ' + (data.error || 'Something went wrong.'));
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 11 11"><path d="M5.5 1v7M2 4.5l3.5-3.5 3.5 3.5M1.5 10h8"/></svg> Confirm & Apply`;
+    }
+  } catch (err) {
+    showToast('error', '⚠ Network error. Please try again.');
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 11 11"><path d="M5.5 1v7M2 4.5l3.5-3.5 3.5 3.5M1.5 10h8"/></svg> Confirm & Apply`;
+    console.error(err);
+  }
+}
+
+function showToast(type, msg) {
+  const t = document.getElementById('ocaToast');
+  t.className = 'oca-toast ' + type + ' show';
+  t.textContent = msg;
+}
+function hideToast() {
+  const t = document.getElementById('ocaToast');
+  t.className = 'oca-toast';
+  t.textContent = '';
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   APPLICATION TRACKER
+   ════════════════════════════════════════════════════════════════════ */
+
+const STATUS_OPTS = ['Applied','Interviewing','Offered','Rejected','Withdrawn'];
+
+async function loadApplications() {
+  const wrap = document.getElementById('trackerWrap');
+  if (!wrap) return;
+
+  try {
+    const res  = await fetch('/jobs/applications');
+    const data = await res.json();
+    if (!data.ok) return;
+
+    const apps = data.applications || [];
+    document.getElementById('trackerCount').textContent = apps.length;
+
+    // Sync the "Applied" stat card
+    const statEl = document.getElementById('applied-count-display');
+    if (statEl) statEl.textContent = apps.length;
+
+    wrap.style.display = apps.length > 0 ? '' : 'none';
+
+    const body = document.getElementById('trackerBody');
+    if (apps.length === 0) {
+      body.innerHTML = '<div class="tracker-empty">No applications yet. Hit "1-Click Apply" on any job!</div>';
+      return;
+    }
+
+    body.innerHTML = apps.map(a => {
+      const date = a.applied_at
+        ? new Date(a.applied_at).toLocaleDateString('en-IN',{month:'short',day:'numeric'})
+        : '—';
+      const opts = STATUS_OPTS.map(s =>
+        `<option value="${s}" ${s === a.status ? 'selected' : ''}>${s}</option>`
+      ).join('');
+      return `
+        <div class="tracker-row">
+          <div class="tracker-job" title="${escHtml(a.job_title)}">${escHtml(a.job_title)}</div>
+          <div class="tracker-co"  title="${escHtml(a.company)}">${escHtml(a.company)}</div>
+          <div class="tracker-date">${date}</div>
+          <select class="tracker-status-sel status-${a.status}"
+                  onchange="updateStatus(${a.id}, this)">${opts}</select>
+        </div>`;
+    }).join('');
+
+    // Also mark already-applied cards
+    apps.forEach(a => {
+      document.querySelectorAll('.jcard').forEach(card => {
+        if (
+          card.dataset.title   === a.job_title.toLowerCase() &&
+          card.dataset.company === a.company.toLowerCase()
+        ) {
+          card.classList.add('is-applied');
+        }
+      });
+    });
+
+  } catch (err) {
+    console.warn('Tracker load error:', err);
+  }
+}
+
+async function updateStatus(appId, sel) {
+  const newStatus = sel.value;
+  sel.className = 'tracker-status-sel status-' + newStatus;
+  try {
+    await fetch(`/jobs/applications/${appId}/status`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ status: newStatus }),
+    });
+  } catch (err) {
+    console.warn('Status update error:', err);
+  }
+}
+
+// Load tracker on page ready
+document.addEventListener('DOMContentLoaded', loadApplications);
 </script>
 
 {% endblock %}

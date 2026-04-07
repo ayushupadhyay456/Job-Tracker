@@ -25,11 +25,19 @@ class User(db.Model, UserMixin):
     inferred_role       = db.Column(db.String(100), default="Software Engineer")
     experience_level    = db.Column(db.String(50),  nullable=True)  # Entry / Mid / Senior
 
-    # ── NEW: tracks whether user has completed post-payment onboarding ───────
+    # ── tracks whether user has completed post-payment onboarding ───────────
     onboarding_complete = db.Column(db.Boolean, default=False)
 
-    # Relationship
-    remote_applications = db.relationship("RemoteApplication", backref="user", lazy="dynamic")
+    # ── ATS improvement — one attempt per resume upload ──────────────────────
+    # Reset automatically when the user uploads a new resume (app.py handles this)
+    ats_improved_text   = db.Column(db.Text,     nullable=True)   # AI-rewritten resume text
+    ats_original_score  = db.Column(db.Integer,  nullable=True)   # score BEFORE improvement
+    ats_improved_score  = db.Column(db.Integer,  nullable=True)   # score AFTER improvement
+    ats_improved_at     = db.Column(db.DateTime, nullable=True)   # None = not yet used
+
+    # Relationships
+    remote_applications    = db.relationship("RemoteApplication",    backref="user", lazy="dynamic")
+    one_click_applications = db.relationship("OneClickApplication",  backref="user", lazy="dynamic")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -92,3 +100,51 @@ class JobApplication(db.Model):
     confidence_score = db.Column(db.Integer)
     status           = db.Column(db.String(50))
     last_activity    = db.Column(db.DateTime)
+
+
+# ── NEW: One-Click Application tracking ──────────────────────────────────────
+class OneClickApplication(db.Model):
+    """
+    Tracks every one-click apply action a user takes from the jobs board.
+    Stores a full job snapshot so records stay useful even after listings expire.
+    """
+    __tablename__ = "one_click_applications"
+
+    id           = db.Column(db.Integer, primary_key=True)
+    user_id      = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # Job snapshot (captured at apply-time so data survives listing expiry)
+    job_id       = db.Column(db.String(255), nullable=True)   # external ID: Adzuna / Remotive
+    job_title    = db.Column(db.String(255), nullable=False)
+    company      = db.Column(db.String(255), nullable=False)
+    location     = db.Column(db.String(255), nullable=True)
+    job_url      = db.Column(db.String(512),  nullable=True)
+    source       = db.Column(db.String(100), nullable=True)   # "Adzuna" | "Remotive"
+    match_score  = db.Column(db.Integer,     nullable=True)
+
+    # Application data
+    cover_letter = db.Column(db.Text, nullable=True)   # AI-generated cover letter
+    status       = db.Column(db.String(50), default="Applied")
+    # Statuses: Applied | Pending | Withdrawn | Interviewing | Offered | Rejected
+
+    applied_at   = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    updated_at   = db.Column(db.DateTime, default=lambda: datetime.now(UTC),
+                             onupdate=lambda: datetime.now(UTC))
+
+    def to_dict(self):
+        return {
+            "id":           self.id,
+            "job_id":       self.job_id,
+            "job_title":    self.job_title,
+            "company":      self.company,
+            "location":     self.location,
+            "job_url":      self.job_url,
+            "source":       self.source,
+            "match_score":  self.match_score,
+            "cover_letter": self.cover_letter,
+            "status":       self.status,
+            "applied_at":   self.applied_at.isoformat() if self.applied_at else None,
+        }
+
+    def __repr__(self):
+        return f"<OneClickApplication {self.job_title} @ {self.company} [{self.status}]>"

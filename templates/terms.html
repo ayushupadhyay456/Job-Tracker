@@ -1,0 +1,737 @@
+{% extends "base.html" %}
+{% block title %}Terms & Conditions — JobMatch{% endblock %}
+{% block page_title %}Terms &amp; Conditions{% endblock %}
+
+{% block topbar_right %}
+<div style="display:flex;align-items:center;gap:10px;">
+  <span style="font-size:0.8rem;color:var(--mid);">Last updated: <strong style="color:var(--ink);">June 1, 2025</strong></span>
+  <a href="#" onclick="window.print()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:0.82rem;color:var(--ink);text-decoration:none;font-weight:500;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Print
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Layout ── */
+  .terms-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── Sticky Sidebar / TOC ── */
+  .toc-sidebar {
+    position: sticky;
+    top: 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .toc-sidebar .toc-heading {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mid);
+    font-weight: 600;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .toc-sidebar ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: toc-counter;
+  }
+  .toc-sidebar ol li {
+    counter-increment: toc-counter;
+    margin-bottom: 2px;
+  }
+  .toc-sidebar ol li a {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 7px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    color: var(--mid);
+    transition: background 0.15s, color 0.15s;
+    line-height: 1.35;
+  }
+  .toc-sidebar ol li a::before {
+    content: counter(toc-counter, decimal-leading-zero);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--border);
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .toc-sidebar ol li a:hover,
+  .toc-sidebar ol li a.active {
+    background: #f5f0e8;
+    color: var(--ink);
+  }
+  .toc-sidebar ol li a:hover::before,
+  .toc-sidebar ol li a.active::before {
+    color: var(--green, #1a9e5c);
+  }
+  .toc-sidebar .toc-footer {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 0.74rem;
+    color: var(--mid);
+    line-height: 1.5;
+  }
+  .toc-sidebar .toc-footer a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* ── Main content ── */
+  .terms-main {
+    min-width: 0;
+  }
+
+  /* ── Intro banner ── */
+  .terms-intro {
+    background: #f5f0e8;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .terms-intro-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .terms-intro p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #5a5248;
+    line-height: 1.65;
+  }
+  .terms-intro p strong {
+    color: var(--ink);
+  }
+
+  /* ── Section cards ── */
+  .terms-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    scroll-margin-top: 24px;
+  }
+  .terms-section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: #faf7f3;
+    cursor: pointer;
+    user-select: none;
+  }
+  .terms-section-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--mid);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 7px;
+    flex-shrink: 0;
+  }
+  .terms-section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ink);
+    flex: 1;
+  }
+  .terms-section-chevron {
+    color: var(--mid);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .terms-section.collapsed .terms-section-chevron {
+    transform: rotate(-90deg);
+  }
+  .terms-section-body {
+    padding: 22px 24px;
+    transition: none;
+  }
+  .terms-section.collapsed .terms-section-body {
+    display: none;
+  }
+
+  /* ── Body typography ── */
+  .terms-section-body p {
+    margin: 0 0 14px;
+    font-size: 0.875rem;
+    color: #4a443c;
+    line-height: 1.75;
+  }
+  .terms-section-body p:last-child { margin-bottom: 0; }
+
+  .terms-section-body ul,
+  .terms-section-body ol {
+    margin: 0 0 14px 0;
+    padding-left: 0;
+    list-style: none;
+  }
+  .terms-section-body ul li,
+  .terms-section-body ol li {
+    position: relative;
+    padding-left: 20px;
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+    color: #4a443c;
+    line-height: 1.65;
+  }
+  .terms-section-body ul li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    color: var(--mid);
+    font-weight: 600;
+  }
+  .terms-section-body ol {
+    counter-reset: ol-counter;
+  }
+  .terms-section-body ol li {
+    counter-increment: ol-counter;
+  }
+  .terms-section-body ol li::before {
+    content: counter(ol-counter) '.';
+    position: absolute;
+    left: 0;
+    color: var(--mid);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  /* ── Inline highlight boxes ── */
+  .terms-highlight {
+    background: #f5f0e8;
+    border-left: 3px solid #d4a96a;
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 0.85rem;
+    color: #5a4e3a;
+    line-height: 1.6;
+  }
+  .terms-highlight.critical {
+    background: #fdeaea;
+    border-left-color: #dd4444;
+    color: #7a2222;
+  }
+  .terms-highlight.info {
+    background: #e8f0fd;
+    border-left-color: #4a7ae0;
+    color: #2a4a7a;
+  }
+
+  /* ── Definition term ── */
+  .terms-section-body dt {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.875rem;
+    margin-top: 12px;
+  }
+  .terms-section-body dd {
+    margin: 4px 0 12px 16px;
+    font-size: 0.86rem;
+    color: #4a443c;
+    line-height: 1.65;
+  }
+
+  /* ── Agreement footer ── */
+  .terms-agreement {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .terms-agreement p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--mid);
+    line-height: 1.6;
+    max-width: 560px;
+  }
+  .terms-agreement p a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .btn-accept {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    background: var(--ink, #1c1a17);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .btn-accept:hover { opacity: 0.85; }
+
+  /* ── Responsive ── */
+  @media (max-width: 820px) {
+    .terms-layout {
+      grid-template-columns: 1fr;
+    }
+    .toc-sidebar {
+      position: static;
+    }
+  }
+  @media (max-width: 480px) {
+    .terms-section-header { padding: 14px 16px; }
+    .terms-section-body   { padding: 16px; }
+    .terms-agreement {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media print {
+    .toc-sidebar, .terms-agreement { display: none; }
+    .terms-layout { grid-template-columns: 1fr; }
+    .terms-section.collapsed .terms-section-body { display: block !important; }
+    .terms-section-header { cursor: default; }
+    .terms-section-chevron { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="terms-layout">
+
+  <!-- ── Sidebar TOC ────────────────────────────────────────────── -->
+  <aside class="toc-sidebar" aria-label="Table of contents">
+    <div class="toc-heading">Contents</div>
+    <ol id="toc-list">
+      <li><a href="#s1">Acceptance of Terms</a></li>
+      <li><a href="#s2">Definitions</a></li>
+      <li><a href="#s3">Eligibility &amp; Accounts</a></li>
+      <li><a href="#s4">Subscriptions &amp; Billing</a></li>
+      <li><a href="#s5">Permitted Use</a></li>
+      <li><a href="#s6">AI Features &amp; Data</a></li>
+      <li><a href="#s7">Gmail &amp; Third-Party Access</a></li>
+      <li><a href="#s8">Intellectual Property</a></li>
+      <li><a href="#s9">Privacy &amp; Data Protection</a></li>
+      <li><a href="#s10">Disclaimers</a></li>
+      <li><a href="#s11">Limitation of Liability</a></li>
+      <li><a href="#s12">Indemnification</a></li>
+      <li><a href="#s13">Termination</a></li>
+      <li><a href="#s14">Governing Law</a></li>
+      <li><a href="#s15">Changes to Terms</a></li>
+      <li><a href="#s16">Contact Us</a></li>
+    </ol>
+    <div class="toc-footer">
+      Questions? <a href="mailto:legal@jobmatch.ai">legal@jobmatch.ai</a>
+    </div>
+  </aside>
+
+  <!-- ── Main ─────────────────────────────────────────────────────── -->
+  <main class="terms-main" id="terms-top">
+
+    <!-- Intro banner -->
+    <div class="terms-intro" role="note">
+      <div class="terms-intro-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8a7f72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <p>
+        <strong>Please read these Terms carefully before using JobMatch.</strong>
+        By creating an account or accessing any feature of the platform you agree to be bound by these Terms and our
+        <a href="/privacy" style="color:var(--ink);text-underline-offset:2px;">Privacy Policy</a>.
+        If you do not agree, you must not use the Service.
+      </p>
+    </div>
+
+    <!-- 1 -->
+    <div class="terms-section" id="s1">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">01</span>
+        <span class="terms-section-title">Acceptance of Terms</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>These Terms of Service ("Terms") constitute a legally binding agreement between you ("User", "you", or "your") and JobMatch Technologies Private Limited ("JobMatch", "we", "us", or "our"), governing your access to and use of the JobMatch platform, including the website, web application, AI-powered features, and all associated services (collectively, the "Service").</p>
+        <p>By clicking "I Agree", registering an account, or otherwise accessing or using the Service, you confirm that:</p>
+        <ul>
+          <li>You have read, understood, and agree to be bound by these Terms;</li>
+          <li>You have read and accepted our <a href="/privacy" style="color:var(--ink);">Privacy Policy</a>;</li>
+          <li>If you are accepting on behalf of an organisation, you have authority to bind that organisation to these Terms.</li>
+        </ul>
+        <div class="terms-highlight critical">
+          These Terms contain a limitation of liability clause and a disclaimer of warranties. Please review Sections 10 and 11 carefully.
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="terms-section" id="s2">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">02</span>
+        <span class="terms-section-title">Definitions</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <dl>
+          <dt>"Service"</dt>
+          <dd>The JobMatch web platform, AI tools, email monitoring features, resume analysis, job-matching algorithms, and all related software and content provided by JobMatch.</dd>
+          <dt>"User Content"</dt>
+          <dd>Any data, files, text, or information you upload, submit, or make available through the Service, including resumes, cover letters, and preferences.</dd>
+          <dt>"AI Features"</dt>
+          <dd>Machine-learning and large-language-model powered tools within the Service, including resume scoring, job-match scoring, cover letter generation, and recruiter email classification.</dd>
+          <dt>"Subscription"</dt>
+          <dd>A paid plan granting access to premium features of the Service for a defined billing period (monthly, bi-annual, or annual).</dd>
+          <dt>"Third-Party Services"</dt>
+          <dd>External platforms and APIs integrated with the Service, including Google Gmail, Google OAuth, job boards (Adzuna, Remotive), payment processors (Razorpay), and AI providers.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="terms-section" id="s3">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">03</span>
+        <span class="terms-section-title">Eligibility &amp; Accounts</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>The Service is intended for individuals who are at least 18 years of age and are legally permitted to enter into binding contracts in their jurisdiction. By using the Service you represent that you meet these requirements.</p>
+        <p>When creating an account you agree to:</p>
+        <ul>
+          <li>Provide accurate, current, and complete registration information;</li>
+          <li>Maintain the confidentiality of your login credentials;</li>
+          <li>Notify us immediately at <a href="mailto:support@jobmatch.ai" style="color:var(--ink);">support@jobmatch.ai</a> if you suspect unauthorised access to your account;</li>
+          <li>Not share your account with any third party or allow others to use your account;</li>
+          <li>Accept responsibility for all activity that occurs under your account.</li>
+        </ul>
+        <p>JobMatch reserves the right to suspend or terminate any account found to be using false information or acting in breach of these Terms.</p>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="terms-section" id="s4">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">04</span>
+        <span class="terms-section-title">Subscriptions &amp; Billing</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>Access to premium features of the Service requires an active paid Subscription. We offer the following plan tiers: Monthly, Bi-Annual, and Annual. Current pricing is displayed on our <a href="/pricing" style="color:var(--ink);">Pricing page</a> and may be updated from time to time.</p>
+        <p><strong>Billing &amp; Renewals.</strong> Subscriptions are billed in advance for the applicable period. Unless you cancel before the renewal date, your Subscription will automatically renew at the then-current rate. All charges are processed securely via Razorpay.</p>
+        <p><strong>Refund Policy.</strong> All payments are non-refundable except where required by applicable law. If you believe you have been charged in error, contact us within 7 days of the charge at <a href="mailto:billing@jobmatch.ai" style="color:var(--ink);">billing@jobmatch.ai</a>.</p>
+        <p><strong>Cancellation.</strong> You may cancel your Subscription at any time from your account settings. Cancellation takes effect at the end of the current billing period; you will retain access to paid features until that date.</p>
+        <p><strong>Plan Changes.</strong> Upgrades take effect immediately with a prorated charge. Downgrades take effect at the start of the next billing period.</p>
+        <div class="terms-highlight info">
+          Subscription status changes are reflected in your account dashboard under Billing. Contact us if you experience any discrepancy.
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="terms-section" id="s5">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">05</span>
+        <span class="terms-section-title">Permitted Use</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>The Service is licensed to you for personal, non-commercial job-search purposes only. You may not:</p>
+        <ul>
+          <li>Reproduce, resell, sublicense, or redistribute any part of the Service or its outputs;</li>
+          <li>Use automated scripts, bots, scrapers, or crawlers to extract data from the Service;</li>
+          <li>Attempt to reverse-engineer, decompile, or otherwise access the source code of the Service;</li>
+          <li>Use the Service to transmit spam, malware, or any content that violates applicable law;</li>
+          <li>Impersonate any person or entity, or misrepresent your affiliation with any person or entity;</li>
+          <li>Circumvent, disable, or otherwise interfere with security-related features of the Service;</li>
+          <li>Use the Service in any manner that could damage, disable, overburden, or impair our infrastructure;</li>
+          <li>Access the Service with the intention of building a competing product or service.</li>
+        </ul>
+        <p>Violation of these restrictions may result in immediate account termination and may expose you to legal liability.</p>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <div class="terms-section" id="s6">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">06</span>
+        <span class="terms-section-title">AI Features &amp; Data</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>JobMatch uses third-party AI models (including Google Gemini) to power features such as resume scoring, job-match analysis, cover letter generation, and recruiter email classification. By using these features you acknowledge and agree that:</p>
+        <ul>
+          <li>AI-generated outputs are probabilistic and may contain inaccuracies, omissions, or errors;</li>
+          <li>AI scores and suggestions are provided for informational purposes only and do not constitute professional career, legal, or employment advice;</li>
+          <li>You are solely responsible for reviewing and verifying any AI-generated content before using it in applications or communications;</li>
+          <li>Excerpts of your resume and job preferences may be transmitted to third-party AI providers solely to generate your requested outputs — see our Privacy Policy for details;</li>
+          <li>JobMatch does not guarantee specific job outcomes, interview invitations, or employment as a result of using AI features.</li>
+        </ul>
+        <div class="terms-highlight">
+          AI match scores and ATS ratings are estimates based on keyword and semantic analysis. They should be used as a guide alongside your own judgement.
+        </div>
+      </div>
+    </div>
+
+    <!-- 7 -->
+    <div class="terms-section" id="s7">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">07</span>
+        <span class="terms-section-title">Gmail &amp; Third-Party Access</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>The Recruiter Email Monitor feature requires you to authorise JobMatch to access your Gmail account via Google OAuth. By granting this access you acknowledge that:</p>
+        <ul>
+          <li>JobMatch will read incoming emails solely to identify and classify recruiter messages;</li>
+          <li>Email content and metadata (sender, subject, date) may be stored in our systems to populate your dashboard;</li>
+          <li>We do not read, store, or transmit personal emails unrelated to recruiter identification;</li>
+          <li>You may revoke Gmail access at any time via your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" style="color:var(--ink);">Google Account permissions</a> or from your JobMatch account settings;</li>
+          <li>Revoking access will disable the email monitoring feature but will not delete previously analysed data unless you request deletion.</li>
+        </ul>
+        <p>Use of Google APIs is subject to <a href="https://policies.google.com/terms" target="_blank" rel="noopener" style="color:var(--ink);">Google's Terms of Service</a>. JobMatch's use of Google user data complies with the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener" style="color:var(--ink);">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+      </div>
+    </div>
+
+    <!-- 8 -->
+    <div class="terms-section" id="s8">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">08</span>
+        <span class="terms-section-title">Intellectual Property</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p><strong>Our IP.</strong> The Service, including its design, code, algorithms, branding, and all content produced by JobMatch, is owned by or licensed to JobMatch and is protected by applicable intellectual property laws. You are granted a limited, non-exclusive, non-transferable, revocable licence to access and use the Service solely as described in these Terms.</p>
+        <p><strong>Your Content.</strong> You retain all ownership rights in User Content you upload. By uploading content you grant JobMatch a limited, non-exclusive, worldwide, royalty-free licence to use, process, and store your content solely for the purpose of providing the Service to you.</p>
+        <p><strong>Feedback.</strong> If you submit feedback, suggestions, or ideas about the Service, you grant JobMatch an irrevocable, perpetual, royalty-free right to use and incorporate that feedback without any obligation to you.</p>
+      </div>
+    </div>
+
+    <!-- 9 -->
+    <div class="terms-section" id="s9">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">09</span>
+        <span class="terms-section-title">Privacy &amp; Data Protection</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>Your privacy is important to us. Our collection, use, and protection of personal data is governed by our <a href="/privacy" style="color:var(--ink);">Privacy Policy</a>, which is incorporated into these Terms by reference.</p>
+        <p>Key privacy commitments:</p>
+        <ul>
+          <li>We do not sell your personal data to third parties;</li>
+          <li>Resume data is used solely to provide job-matching and AI features to you;</li>
+          <li>You may request deletion of your account and all associated data at any time by contacting <a href="mailto:privacy@jobmatch.ai" style="color:var(--ink);">privacy@jobmatch.ai</a>;</li>
+          <li>Data is stored on servers located in India and the European Union, in compliance with applicable data protection regulations including the IT Act, 2000 (India) and the GDPR where applicable.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 10 -->
+    <div class="terms-section" id="s10">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">10</span>
+        <span class="terms-section-title">Disclaimers</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.</p>
+        <p>JobMatch does not warrant that:</p>
+        <ul>
+          <li>The Service will be uninterrupted, error-free, or secure;</li>
+          <li>Any job listings, recruiter contacts, or AI outputs are accurate, complete, or up to date;</li>
+          <li>Use of the Service will result in job interviews, offers, or employment;</li>
+          <li>The Service will meet your specific requirements or expectations;</li>
+          <li>Defects or errors in the Service will be corrected within any particular timeframe.</li>
+        </ul>
+        <div class="terms-highlight critical">
+          Job listings and recruiter email classifications are generated algorithmically and may contain errors. Always independently verify opportunities before applying.
+        </div>
+      </div>
+    </div>
+
+    <!-- 11 -->
+    <div class="terms-section" id="s11">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">11</span>
+        <span class="terms-section-title">Limitation of Liability</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, JOBMATCH AND ITS DIRECTORS, EMPLOYEES, AGENTS, AND LICENSORS SHALL NOT BE LIABLE FOR ANY:</p>
+        <ul>
+          <li>Indirect, incidental, special, consequential, or punitive damages;</li>
+          <li>Loss of profits, data, business, goodwill, or anticipated savings;</li>
+          <li>Damages arising from reliance on AI-generated outputs, job-match scores, or resume suggestions;</li>
+          <li>Damages resulting from unauthorised access to or alteration of your data;</li>
+          <li>Damages resulting from the conduct of third parties, including employers, recruiters, or job boards.</li>
+        </ul>
+        <p>IN ALL CASES, JOBMATCH'S TOTAL CUMULATIVE LIABILITY TO YOU SHALL NOT EXCEED THE GREATER OF (A) THE AMOUNT YOU PAID TO JOBMATCH IN THE THREE MONTHS PRECEDING THE CLAIM, OR (B) INR 500.</p>
+        <p>Some jurisdictions do not allow the exclusion of certain warranties or limitation of liability for certain types of damages. In such jurisdictions our liability is limited to the fullest extent permitted by law.</p>
+      </div>
+    </div>
+
+    <!-- 12 -->
+    <div class="terms-section" id="s12">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">12</span>
+        <span class="terms-section-title">Indemnification</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>You agree to indemnify, defend, and hold harmless JobMatch and its officers, directors, employees, contractors, and agents from and against any claims, liabilities, damages, judgements, awards, losses, costs, and expenses (including reasonable legal fees) arising out of or relating to:</p>
+        <ul>
+          <li>Your violation of these Terms;</li>
+          <li>Any User Content you submit, upload, or transmit through the Service;</li>
+          <li>Your use of the Service in violation of any applicable law or third-party right;</li>
+          <li>Any misrepresentation made by you in connection with the Service.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 13 -->
+    <div class="terms-section" id="s13">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">13</span>
+        <span class="terms-section-title">Termination</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p><strong>By you.</strong> You may close your account at any time by visiting Account Settings and selecting "Delete Account". Upon deletion your User Content will be removed from our active systems within 30 days, subject to our data retention obligations.</p>
+        <p><strong>By JobMatch.</strong> We may suspend or permanently terminate your access to the Service, with or without notice, if we reasonably believe you have violated these Terms, engaged in fraudulent or illegal activity, or if required to do so by law.</p>
+        <p><strong>Effect of termination.</strong> Upon termination: your licence to use the Service ends immediately; access to paid features ceases; accrued obligations and provisions that by their nature should survive (including Sections 8, 10, 11, 12, and 14) will continue in full force.</p>
+      </div>
+    </div>
+
+    <!-- 14 -->
+    <div class="terms-section" id="s14">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">14</span>
+        <span class="terms-section-title">Governing Law &amp; Disputes</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>These Terms are governed by and construed in accordance with the laws of India. Any dispute arising out of or in connection with these Terms shall be subject to the exclusive jurisdiction of the courts located in Kolkata, West Bengal, India.</p>
+        <p><strong>Informal resolution.</strong> Before initiating formal proceedings, you agree to first contact us at <a href="mailto:legal@jobmatch.ai" style="color:var(--ink);">legal@jobmatch.ai</a> and attempt to resolve the dispute informally for a period of at least 30 days.</p>
+      </div>
+    </div>
+
+    <!-- 15 -->
+    <div class="terms-section" id="s15">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">15</span>
+        <span class="terms-section-title">Changes to These Terms</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>We reserve the right to modify these Terms at any time. When we make material changes we will:</p>
+        <ul>
+          <li>Update the "Last updated" date at the top of this page;</li>
+          <li>Send an email notification to your registered address at least 14 days before the changes take effect;</li>
+          <li>Display a notice within the Service for at least 30 days.</li>
+        </ul>
+        <p>Your continued use of the Service after the effective date of any revised Terms constitutes your acceptance of those changes. If you do not agree to the revised Terms, you must stop using the Service and cancel your Subscription before the effective date.</p>
+      </div>
+    </div>
+
+    <!-- 16 -->
+    <div class="terms-section" id="s16">
+      <div class="terms-section-header" onclick="toggleSection(this)" aria-expanded="true">
+        <span class="terms-section-number">16</span>
+        <span class="terms-section-title">Contact Us</span>
+        <svg class="terms-section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="terms-section-body">
+        <p>If you have any questions, concerns, or requests regarding these Terms, please reach out to us:</p>
+        <ul>
+          <li><strong>Email:</strong> <a href="mailto:legal@jobmatch.ai" style="color:var(--ink);">legal@jobmatch.ai</a></li>
+          <li><strong>Support:</strong> <a href="mailto:support@jobmatch.ai" style="color:var(--ink);">support@jobmatch.ai</a></li>
+          <li><strong>Billing:</strong> <a href="mailto:billing@jobmatch.ai" style="color:var(--ink);">billing@jobmatch.ai</a></li>
+          <li><strong>Address:</strong> JobMatch Technologies Private Limited, Kolkata, West Bengal, India</li>
+        </ul>
+        <p>We aim to respond to all legal enquiries within 5 business days.</p>
+      </div>
+    </div>
+
+    <!-- Agreement footer -->
+    <div class="terms-agreement">
+      <p>
+        By using JobMatch you confirm you have read and agree to these Terms of Service and our
+        <a href="/privacy">Privacy Policy</a>. Last updated <strong>June 1, 2025</strong>.
+      </p>
+      <a href="/" class="btn-accept">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        I Understand
+      </a>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function toggleSection(header) {
+    const section = header.closest('.terms-section');
+    const expanded = header.getAttribute('aria-expanded') === 'true';
+    section.classList.toggle('collapsed', expanded);
+    header.setAttribute('aria-expanded', String(!expanded));
+  }
+
+  // Highlight active TOC link on scroll
+  (function () {
+    const sections = document.querySelectorAll('.terms-section[id]');
+    const links    = document.querySelectorAll('#toc-list a');
+
+    if (!sections.length || !links.length) return;
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          const active = document.querySelector(`#toc-list a[href="#${entry.target.id}"]`);
+          if (active) active.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+
+    sections.forEach(s => obs.observe(s));
+  })();
+</script>
+{% endblock %}

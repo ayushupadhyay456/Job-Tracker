@@ -1,0 +1,752 @@
+{% extends "base.html" %}
+{% block title %}Profile — PathHire{% endblock %}
+
+{% block content %}
+
+<style>
+  @keyframes fadein { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes spin    { to { transform: rotate(360deg); } }
+
+  /* ── Page header ── */
+  .ph { margin-bottom: 28px; }
+  .ph-eye {
+    font-size: 10px; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent);
+    display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+  }
+  .ph-eye::before {
+    content: ''; display: block; width: 14px; height: 1.5px;
+    background: var(--accent); border-radius: 2px;
+  }
+  .ph-title {
+    font-size: 28px; font-weight: 700; letter-spacing: -.035em;
+    color: var(--dark); line-height: 1.15; margin-bottom: 6px;
+  }
+  .ph-sub { font-size: 13px; color: var(--fg2); }
+
+  /* ── Layout ── */
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .profile-left  { display: flex; flex-direction: column; gap: 16px; }
+  .profile-right { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── Card base ── */
+  .pcard {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 22px;
+    animation: fadein .4s ease both;
+    transition: box-shadow .2s, border-color .2s;
+  }
+  .pcard:hover {
+    border-color: rgba(217,82,21,.15);
+    box-shadow: 0 4px 20px rgba(12,11,10,.07);
+  }
+
+  .card-section-title {
+    font-size: 9.5px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--fg3);
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--line);
+  }
+
+  /* ── Identity card (left top) ── */
+  .id-avatar-wrap {
+    display: flex; justify-content: center; margin-bottom: 16px;
+    position: relative;
+  }
+  .id-avatar {
+    width: 80px; height: 80px; border-radius: 18px;
+    background: linear-gradient(140deg, var(--accent) 0%, #7d2d08 100%);
+    display: grid; place-items: center;
+    font-size: 28px; font-weight: 700; color: #fff;
+    border: 3px solid rgba(217,82,21,.3);
+    overflow: hidden; cursor: pointer; position: relative;
+    transition: border-color .18s;
+  }
+  .id-avatar:hover { border-color: var(--accent); }
+  .id-avatar:hover .id-avatar-overlay { opacity: 1; }
+  .id-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .id-avatar-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,.5);
+    display: grid; place-items: center;
+    font-size: 11px; font-weight: 600; color: #fff;
+    opacity: 0; transition: opacity .15s;
+    border-radius: 15px;
+  }
+
+  .id-name {
+    text-align: center; font-size: 18px; font-weight: 700;
+    letter-spacing: -.03em; color: var(--dark); margin-bottom: 4px;
+  }
+  .id-email {
+    text-align: center; font-size: 12px; color: var(--fg2); margin-bottom: 12px;
+  }
+
+  .id-role-detected {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    background: var(--a12); border: 1px solid var(--a25);
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;
+  }
+  .id-role-detected svg { width: 12px; height: 12px; stroke: var(--accent); fill: none; stroke-width: 2; flex-shrink: 0; }
+  .id-role-label { font-size: 10px; color: var(--fg2); font-weight: 500; }
+  .id-role-value { font-size: 12.5px; font-weight: 700; color: var(--accent); margin-left: auto; }
+
+  /* stats row inside identity card */
+  .id-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px; background: var(--line);
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  }
+  .id-stat {
+    background: var(--surface);
+    padding: 10px 8px; text-align: center;
+  }
+  .id-stat-val {
+    font-size: 18px; font-weight: 700; letter-spacing: -.04em;
+    color: var(--dark); line-height: 1;
+  }
+  .id-stat-lbl {
+    font-size: 9px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--fg3); margin-top: 3px;
+  }
+
+  /* ── Plan card ── */
+  .plan-banner {
+    border-radius: 10px; padding: 14px 16px;
+    border: 1px solid var(--a25);
+    background: linear-gradient(135deg, rgba(217,82,21,.07), rgba(217,82,21,.03));
+    margin-bottom: 14px;
+  }
+  .plan-banner-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .plan-banner-name {
+    font-size: 13px; font-weight: 700; color: var(--accent);
+  }
+  .plan-banner-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--fg3);
+    background: var(--bg); border: 1px solid var(--line);
+    padding: 2px 8px; border-radius: 4px;
+  }
+  .plan-progress-bar {
+    height: 3px; background: rgba(217,82,21,.15);
+    border-radius: 3px; overflow: hidden; margin-bottom: 6px;
+  }
+  .plan-progress-fill {
+    height: 100%; background: var(--accent); border-radius: 3px;
+    transition: width 1s cubic-bezier(.23,1,.32,1);
+  }
+  .plan-meta { font-size: 10.5px; color: var(--fg3); }
+  .plan-meta strong { color: var(--fg); }
+
+  .btn-manage {
+    width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px; border-radius: var(--rs);
+    background: var(--dark); color: #fff;
+    font-family: 'Geist', sans-serif; font-size: 12.5px; font-weight: 600;
+    border: none; cursor: pointer; text-decoration: none;
+    transition: background .16s, transform .12s;
+  }
+  .btn-manage:hover { background: var(--accent); transform: translateY(-1px); }
+
+  /* ── Account quick-links ── */
+  .quick-links { display: flex; flex-direction: column; gap: 2px; }
+  .ql-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 11px; border-radius: 9px;
+    font-size: 13px; font-weight: 500; color: var(--fg2);
+    text-decoration: none; cursor: pointer;
+    transition: background .14s, color .14s;
+    border: 1px solid transparent;
+  }
+  .ql-item:hover { background: var(--bg); border-color: var(--line); color: var(--dark); }
+  .ql-item svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; flex-shrink: 0; }
+  .ql-item.danger { color: #c0392b; }
+  .ql-item.danger:hover { background: rgba(192,57,43,.06); border-color: rgba(192,57,43,.15); }
+  .ql-chevron { margin-left: auto; width: 12px; height: 12px; stroke: var(--fg3); }
+
+  /* ── Resume status card (right side) ── */
+  .resume-status {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r);
+    animation: fadein .4s .05s ease both;
+    transition: box-shadow .2s;
+  }
+  .resume-status:hover { box-shadow: 0 4px 20px rgba(12,11,10,.07); }
+  .rs-icon {
+    width: 44px; height: 44px; border-radius: 11px; flex-shrink: 0;
+    display: grid; place-items: center;
+  }
+  .rs-icon.ok  { background: rgba(31,122,59,.10); border: 1px solid rgba(31,122,59,.2); }
+  .rs-icon.no  { background: var(--a12); border: 1px solid var(--a25); }
+  .rs-icon svg { width: 18px; height: 18px; fill: none; stroke-width: 1.8; stroke-linecap: round; }
+  .rs-icon.ok svg { stroke: #1f7a3b; }
+  .rs-icon.no svg { stroke: var(--accent); }
+  .rs-body { flex: 1; min-width: 0; }
+  .rs-title { font-size: 13.5px; font-weight: 700; color: var(--dark); margin-bottom: 2px; }
+  .rs-sub   { font-size: 11.5px; color: var(--fg2); }
+  .rs-action {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 8px;
+    font-size: 12px; font-weight: 600;
+    text-decoration: none; white-space: nowrap;
+    transition: background .15s, transform .12s;
+  }
+  .rs-action.ok  { background: rgba(31,122,59,.1); color: #1f7a3b; border: 1px solid rgba(31,122,59,.2); }
+  .rs-action.ok:hover  { background: rgba(31,122,59,.18); transform: translateY(-1px); }
+  .rs-action.no  { background: var(--a12); color: var(--accent); border: 1px solid var(--a25); }
+  .rs-action.no:hover  { background: rgba(217,82,21,.2); transform: translateY(-1px); }
+  .rs-action svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; }
+
+  /* ── ATS Score ring ── */
+  .ats-card { display: flex; align-items: center; gap: 20px; }
+  .ring-wrap { flex-shrink: 0; position: relative; width: 72px; height: 72px; }
+  .ring-svg  { transform: rotate(-90deg); }
+  .ring-text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .ring-pct  { font-size: 16px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+  .ring-word { font-size: 7.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-top: 1px; }
+  .ats-details { flex: 1; }
+  .ats-title { font-size: 15px; font-weight: 700; letter-spacing: -.03em; color: var(--dark); margin-bottom: 4px; }
+  .ats-sub   { font-size: 12px; color: var(--fg2); line-height: 1.5; }
+  .ats-breakdown { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+  .ats-row {
+    display: flex; align-items: center; gap: 8px; font-size: 11.5px;
+  }
+  .ats-row-lbl { color: var(--fg2); width: 100px; flex-shrink: 0; }
+  .ats-bar-track { flex: 1; height: 4px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .ats-bar-fill  { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(.23,1,.32,1); }
+  .ats-row-pct   { font-size: 11px; font-weight: 600; color: var(--fg); width: 32px; text-align: right; flex-shrink: 0; }
+
+  /* ── Skills section ── */
+  .skills-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+  .skill-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 100px;
+    font-size: 11.5px; font-weight: 500;
+    border: 1px solid var(--line); background: var(--bg);
+    color: var(--fg2); transition: all .14s;
+  }
+  .skill-chip:hover { border-color: var(--a25); background: var(--a12); color: var(--accent); }
+  .skill-chip.primary {
+    background: var(--a12); border-color: var(--a25); color: var(--accent); font-weight: 600;
+  }
+  .skills-empty {
+    text-align: center; padding: 24px; color: var(--fg3); font-size: 13px;
+  }
+
+  /* ── Parsed resume sections ── */
+  .parsed-section { margin-bottom: 20px; }
+  .parsed-section:last-child { margin-bottom: 0; }
+  .parsed-label {
+    font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .parsed-label::after { content: ''; flex: 1; height: 1px; background: var(--a25); }
+  .parsed-content {
+    font-size: 12.5px; color: var(--fg2); line-height: 1.7;
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 9px; padding: 12px 14px;
+    max-height: 180px; overflow-y: auto;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .parsed-content::-webkit-scrollbar { width: 3px; }
+  .parsed-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); border-radius: 4px; }
+
+  /* ── Info edit row ── */
+  .info-rows { display: flex; flex-direction: column; gap: 10px; }
+  .info-row {
+    display: flex; align-items: center;
+    padding: 10px 13px; border-radius: 9px;
+    border: 1px solid var(--line); background: var(--bg);
+    gap: 10px; transition: border-color .14s;
+  }
+  .info-row:focus-within { border-color: var(--a25); background: var(--surface); }
+  .info-row svg { width: 13px; height: 13px; stroke: var(--fg3); fill: none; stroke-width: 2; stroke-linecap: round; flex-shrink: 0; }
+  .info-row label { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--fg3); width: 72px; flex-shrink: 0; }
+  .info-row input, .info-row span.info-val {
+    flex: 1; font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 500;
+    color: var(--fg); background: transparent; border: none; outline: none;
+  }
+  .info-row span.info-val { color: var(--fg2); }
+
+  .btn-save-profile {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    width: 100%; padding: 11px;
+    background: var(--dark); color: #fff;
+    border: none; border-radius: var(--rs);
+    font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; margin-top: 14px;
+    transition: background .16s, transform .12s, box-shadow .16s;
+  }
+  .btn-save-profile:hover { background: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 14px var(--a25); }
+  .btn-save-profile svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; }
+
+  /* ── Password change ── */
+  .pwd-form { display: flex; flex-direction: column; gap: 10px; }
+  .pwd-field {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .pwd-field label { font-size: 10.5px; font-weight: 600; color: var(--fg2); letter-spacing: .04em; }
+  .pwd-input {
+    padding: 9px 13px; border-radius: 9px;
+    border: 1px solid var(--line); background: var(--bg);
+    font-family: 'Geist', sans-serif; font-size: 13px;
+    color: var(--fg); outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .pwd-input:focus { border-color: var(--a25); box-shadow: 0 0 0 3px rgba(217,82,21,.07); background: var(--surface); }
+
+  /* ── Delete zone ── */
+  .danger-zone {
+    border: 1px solid rgba(192,57,43,.25);
+    background: rgba(192,57,43,.04);
+    border-radius: var(--r); padding: 18px 22px;
+    animation: fadein .4s .1s ease both;
+  }
+  .dz-title { font-size: 13px; font-weight: 700; color: #c0392b; margin-bottom: 4px; }
+  .dz-sub   { font-size: 12px; color: var(--fg2); line-height: 1.5; margin-bottom: 14px; }
+  .btn-delete {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 16px; border-radius: 8px;
+    font-family: 'Geist', sans-serif; font-size: 12.5px; font-weight: 600;
+    background: rgba(192,57,43,.1); color: #c0392b;
+    border: 1px solid rgba(192,57,43,.25); cursor: pointer;
+    transition: background .15s, transform .12s;
+  }
+  .btn-delete:hover { background: rgba(192,57,43,.18); transform: translateY(-1px); }
+  .btn-delete svg   { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+  /* ── Flash messages ── */
+  .flash-msg {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 14px; border-radius: 9px;
+    font-size: 12.5px; font-weight: 500; margin-bottom: 20px;
+    animation: fadein .3s ease;
+  }
+  .flash-msg.success { background: rgba(31,122,59,.1); border: 1px solid rgba(31,122,59,.25); color: #155c2e; }
+  .flash-msg.error   { background: rgba(201,48,48,.08); border: 1px solid rgba(201,48,48,.2);  color: #8b1c1c; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .profile-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .ats-card { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+
+<!-- ── Page header ── -->
+<div class="ph">
+  <div class="ph-eye">Account</div>
+  <h1 class="ph-title">Your Profile</h1>
+  <p class="ph-sub">Manage your account, view your resume analysis, and track your career data.</p>
+</div>
+
+<!-- ── Flash messages ── -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    <div class="flash-msg {{ category }}">
+      {% if category == 'success' %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      {% else %}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      {% endif %}
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endwith %}
+
+<div class="profile-grid">
+
+  <!-- ════════════════ LEFT COLUMN ════════════════ -->
+  <div class="profile-left">
+
+    <!-- Identity card -->
+    <div class="pcard" style="animation-delay:.02s;">
+      <div class="id-avatar-wrap">
+        <form id="pfpFormProfile" action="/upload-pfp" method="POST" enctype="multipart/form-data" style="position:relative;">
+          <div class="id-avatar" onclick="document.getElementById('pfpInputProfile').click()">
+            {% if current_user.profile_pic %}
+              <img src="{{ current_user.profile_pic }}" alt="Profile photo">
+            {% else %}
+              {{ (current_user.name[0]|upper) if current_user.name else 'A' }}
+            {% endif %}
+            <div class="id-avatar-overlay">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Edit
+            </div>
+          </div>
+          <input id="pfpInputProfile" type="file" name="pfp" accept="image/*"
+                 style="display:none;" onchange="document.getElementById('pfpFormProfile').submit()">
+        </form>
+      </div>
+
+      <div class="id-name">{{ current_user.name or 'User' }}</div>
+      <div class="id-email">{{ current_user.email }}</div>
+
+      {% if current_user.inferred_role %}
+      <div class="id-role-detected">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        <span class="id-role-label">Detected Role</span>
+        <span class="id-role-value">{{ current_user.inferred_role }}</span>
+      </div>
+      {% endif %}
+
+      <!-- Quick stats -->
+      {% set apps_count = current_user.applications|length if current_user.applications is defined else 0 %}
+      <div class="id-stats">
+        <div class="id-stat">
+          <div class="id-stat-val" id="profile-applied-count">—</div>
+          <div class="id-stat-lbl">Applied</div>
+        </div>
+        <div class="id-stat">
+          <div class="id-stat-val">{{ '✓' if current_user.resume_text else '✗' }}</div>
+          <div class="id-stat-lbl">Resume</div>
+        </div>
+        <div class="id-stat">
+          {% set raw_plan = current_user.plan | default('monthly') | lower | trim %}
+          <div class="id-stat-val" style="font-size:12px; padding-top:3px;">
+            {% if raw_plan in ('yearly','annual') %}Yearly
+            {% elif raw_plan in ('biannual','bi-annual','6month','semi-annual') %}6-mo
+            {% else %}Monthly{% endif %}
+          </div>
+          <div class="id-stat-lbl">Plan</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plan / subscription card -->
+    <div class="pcard" style="animation-delay:.04s;">
+      <div class="card-section-title">Subscription</div>
+
+      {% set raw_plan = current_user.plan | default('monthly') | lower | trim %}
+      {% set plan_label = {
+          'monthly':    'Monthly Plan',
+          'biannual':   'Bi-Annual Plan',
+          'bi-annual':  'Bi-Annual Plan',
+          '6month':     'Bi-Annual Plan',
+          'semi-annual':'Bi-Annual Plan',
+          'yearly':     'Yearly Plan',
+          'annual':     'Yearly Plan'
+      }.get(raw_plan, raw_plan | capitalize + ' Plan') %}
+
+      <div class="plan-banner">
+        <div class="plan-banner-top">
+          <span class="plan-banner-name">{{ plan_label }}</span>
+          <span class="plan-banner-label">{{ current_user.subscription_status | capitalize if current_user.subscription_status else 'Active' }}</span>
+        </div>
+
+        {% if current_user.subscription_end %}
+          {% set now_ts  = now_timestamp() %}
+          {% set end_ts  = current_user.subscription_end.timestamp() %}
+          {% set days_left = ((end_ts - now_ts) / 86400) | int %}
+          {% set total_days = plan_total_days(raw_plan) %}
+          {% set pct = [[(days_left / total_days) * 100, 0] | max, 100] | min %}
+          <div class="plan-progress-bar">
+            <div class="plan-progress-fill" style="width:{{ pct | round(1) }}%"></div>
+          </div>
+          <div class="plan-meta">
+            <strong>{{ [days_left, 0] | max }} day{{ 's' if days_left != 1 else '' }} left</strong>
+            &nbsp;·&nbsp;Renews {{ current_user.subscription_end.strftime('%d %b %Y') }}
+          </div>
+        {% else %}
+          <div class="plan-progress-bar"><div class="plan-progress-fill" style="width:100%"></div></div>
+          <div class="plan-meta">Active subscription</div>
+        {% endif %}
+      </div>
+
+      <a href="/pricing" class="btn-manage">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Manage Plan
+      </a>
+    </div>
+
+    <!-- Quick links -->
+    <div class="pcard" style="animation-delay:.06s;">
+      <div class="card-section-title">Quick Actions</div>
+      <div class="quick-links">
+        <a href="/jobs" class="ql-item">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Browse Jobs
+          <svg class="ql-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+        <a href="/resume" class="ql-item">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Update Resume
+          <svg class="ql-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+        <a href="/applied" class="ql-item">
+          <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          View Applications
+          <svg class="ql-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+        <a href="/logout" class="ql-item danger">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log Out
+        </a>
+      </div>
+    </div>
+
+  </div>
+  <!-- END LEFT COLUMN -->
+
+  <!-- ════════════════ RIGHT COLUMN ════════════════ -->
+  <div class="profile-right">
+
+    <!-- Resume status banner -->
+    <div class="resume-status">
+      {% if current_user.resume_text and current_user.resume_text | trim %}
+      <div class="rs-icon ok">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 13 12 16 15 13"/></svg>
+      </div>
+      <div class="rs-body">
+        <div class="rs-title">Resume Attached &amp; Analysed</div>
+        <div class="rs-sub">Role detected: <strong>{{ current_user.inferred_role or 'Software Engineer' }}</strong></div>
+      </div>
+      <a href="/resume" class="rs-action ok">
+        <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        Update
+      </a>
+      {% else %}
+      <div class="rs-icon no">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></svg>
+      </div>
+      <div class="rs-body">
+        <div class="rs-title">No Resume Attached</div>
+        <div class="rs-sub">Upload your PDF to unlock AI-matched job recommendations.</div>
+      </div>
+      <a href="/resume" class="rs-action no">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Upload
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- ATS Score + breakdown -->
+    {% if current_user.resume_text and current_user.resume_text | trim %}
+    {%- set parsed = current_user.parsed_resume | default({}) if current_user.parsed_resume is defined else {} -%}
+    {%- set ats_score = parsed.match_score if parsed and parsed.match_score is defined else 0 -%}
+    {%- set ring_pct = 251.2 - (251.2 * ats_score / 100) -%}
+    <div class="pcard" style="animation-delay:.06s;">
+      <div class="card-section-title">ATS Resume Score</div>
+      <div class="ats-card">
+        <div class="ring-wrap">
+          <svg class="ring-svg" width="72" height="72" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" stroke-width="9"/>
+            <circle cx="50" cy="50" r="40" fill="none"
+                    stroke="{% if ats_score >= 70 %}#1a8a50{% elif ats_score >= 40 %}#c2820a{% else %}var(--accent){% endif %}"
+                    stroke-width="9"
+                    stroke-dasharray="251.2"
+                    stroke-dashoffset="{{ ring_pct }}"
+                    stroke-linecap="round"/>
+          </svg>
+          <div class="ring-text">
+            <span class="ring-pct" style="color:{% if ats_score >= 70 %}#1a8a50{% elif ats_score >= 40 %}#c2820a{% else %}var(--accent){% endif %}">
+              {{ ats_score }}%
+            </span>
+            <span class="ring-word" style="color:var(--fg3)">
+              {% if ats_score >= 70 %}Strong{% elif ats_score >= 40 %}Fair{% else %}Weak{% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="ats-details">
+          <div class="ats-title">
+            {% if ats_score >= 70 %}Strong ATS Compatibility
+            {% elif ats_score >= 40 %}Moderate ATS Score
+            {% else %}Resume Needs Improvement{% endif %}
+          </div>
+          <div class="ats-sub">
+            {% if ats_score >= 70 %}Your resume is well-optimised for applicant tracking systems.
+            {% elif ats_score >= 40 %}A few tweaks can significantly improve your match rate.
+            {% else %}Consider using the AI improve feature on the Resume page.{% endif %}
+          </div>
+
+          {% if parsed %}
+          <div class="ats-breakdown">
+            {% set cats = [
+              ('Keywords',    parsed.keyword_score    | default(0)),
+              ('Formatting',  parsed.format_score     | default(0)),
+              ('Experience',  parsed.experience_score | default(0)),
+            ] %}
+            {% for lbl, val in cats %}
+            <div class="ats-row">
+              <span class="ats-row-lbl">{{ lbl }}</span>
+              <div class="ats-bar-track">
+                <div class="ats-bar-fill" style="width:{{ val }}%;
+                  background:{% if val >= 70 %}#1a8a50{% elif val >= 40 %}#c2820a{% else %}var(--accent){% endif %}">
+                </div>
+              </div>
+              <span class="ats-row-pct">{{ val }}%</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Skills extracted from resume -->
+    <div class="pcard" style="animation-delay:.08s;">
+      <div class="card-section-title">Skills &amp; Technologies</div>
+      {% if current_user.resume_text and current_user.resume_text | trim %}
+        {%- set parsed = current_user.parsed_resume if current_user.parsed_resume is defined else none -%}
+        {%- set skills_list = parsed.skills if parsed and parsed.skills is defined else [] -%}
+        {% if skills_list %}
+          <div class="skills-grid">
+            {% for skill in skills_list %}
+              <span class="skill-chip {% if loop.index <= 5 %}primary{% endif %}">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <!-- Fallback: parse skills from resume text on the fly -->
+          <div class="skills-empty">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--fg3)" stroke-width="1.6" stroke-linecap="round" style="margin:0 auto 8px;display:block;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Skills not yet extracted. Re-upload your resume to analyse skills.
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="skills-empty">Upload your resume to see extracted skills here.</div>
+      {% endif %}
+    </div>
+
+    <!-- Parsed resume sections (Summary / Experience / Education) -->
+    {% if current_user.resume_text and current_user.resume_text | trim %}
+    {%- set parsed = current_user.parsed_resume if current_user.parsed_resume is defined else none -%}
+    <div class="pcard" style="animation-delay:.10s;">
+      <div class="card-section-title">Extracted Resume Content</div>
+
+      {% if parsed and parsed.summary is defined and parsed.summary %}
+      <div class="parsed-section">
+        <div class="parsed-label">Summary</div>
+        <div class="parsed-content">{{ parsed.summary }}</div>
+      </div>
+      {% endif %}
+
+      {% if parsed and parsed.experience is defined and parsed.experience %}
+      <div class="parsed-section">
+        <div class="parsed-label">Experience</div>
+        <div class="parsed-content">{{ parsed.experience }}</div>
+      </div>
+      {% endif %}
+
+      {% if parsed and parsed.education is defined and parsed.education %}
+      <div class="parsed-section">
+        <div class="parsed-label">Education</div>
+        <div class="parsed-content">{{ parsed.education }}</div>
+      </div>
+      {% endif %}
+
+      {% if not parsed or (not parsed.summary and not parsed.experience and not parsed.education) %}
+      <!-- Fallback: show raw resume snippet -->
+      <div class="parsed-section">
+        <div class="parsed-label">Resume Preview</div>
+        <div class="parsed-content">{{ current_user.resume_text[:1500] }}{% if current_user.resume_text|length > 1500 %}…{% endif %}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Account info / edit -->
+    <div class="pcard" style="animation-delay:.12s;">
+      <div class="card-section-title">Account Information</div>
+      <form action="/profile/update" method="POST">
+        <div class="info-rows">
+          <div class="info-row">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <label>Name</label>
+            <input type="text" name="name" value="{{ current_user.name or '' }}" placeholder="Your full name">
+          </div>
+          <div class="info-row">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <label>Email</label>
+            <span class="info-val">{{ current_user.email }}</span>
+          </div>
+          <div class="info-row">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            <label>Role</label>
+            <span class="info-val">{{ current_user.inferred_role or 'Not detected — upload resume' }}</span>
+          </div>
+        </div>
+        <button type="submit" class="btn-save-profile">
+          <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Changes
+        </button>
+      </form>
+    </div>
+
+    <!-- Change password -->
+    <div class="pcard" style="animation-delay:.14s;">
+      <div class="card-section-title">Change Password</div>
+      <form action="/profile/change-password" method="POST" class="pwd-form">
+        <div class="pwd-field">
+          <label>Current Password</label>
+          <input type="password" name="current_password" class="pwd-input" placeholder="Enter current password" autocomplete="current-password">
+        </div>
+        <div class="pwd-field">
+          <label>New Password</label>
+          <input type="password" name="new_password" class="pwd-input" placeholder="At least 8 characters" autocomplete="new-password">
+        </div>
+        <div class="pwd-field">
+          <label>Confirm New Password</label>
+          <input type="password" name="confirm_password" class="pwd-input" placeholder="Repeat new password" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn-save-profile" style="background:var(--dark);">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Update Password
+        </button>
+      </form>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="danger-zone">
+      <div class="dz-title">Danger Zone</div>
+      <div class="dz-sub">Deleting your account is permanent and irreversible. All your data, resume, and application history will be lost.</div>
+      <form action="/profile/delete-account" method="POST"
+            onsubmit="return confirm('Are you absolutely sure? This cannot be undone.');">
+        <button type="submit" class="btn-delete">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          Delete My Account
+        </button>
+      </form>
+    </div>
+
+  </div>
+  <!-- END RIGHT COLUMN -->
+
+</div>
+
+<script>
+// Load applied count from the existing endpoint
+(async () => {
+  try {
+    const res  = await fetch('/jobs/applications');
+    const data = await res.json();
+    if (data.ok) {
+      const el = document.getElementById('profile-applied-count');
+      if (el) el.textContent = (data.applications || []).length;
+    }
+  } catch {}
+})();
+</script>
+
+{% endblock %}

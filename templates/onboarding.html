@@ -5,409 +5,322 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Get Started · PathHire</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --ink:       #0e0d0b;
+      --ink:       #0c0b0a;
+      --ink2:      #111010;
+      --ink3:      #1c1a18;
       --accent:    #d95215;
-      --accent-l:  rgba(217,82,21,0.10);
-      --accent-m:  rgba(217,82,21,0.22);
+      --a10:       rgba(217,82,21,0.10);
+      --a22:       rgba(217,82,21,0.22);
+      --a40:       rgba(217,82,21,0.40);
       --surface:   #ffffff;
-      --bg:        #f7f5f2;
+      --bg:        #f6f4f1;
+      --bg2:       #eceae5;
       --fg:        #1c1a17;
-      --fg2:       #6b6560;
-      --fg3:       #a8a09a;
-      --line:      rgba(0,0,0,0.09);
+      --fg2:       #6c6560;
+      --fg3:       #a09890;
+      --line:      rgba(0,0,0,0.08);
+      --lined:     rgba(255,255,255,0.07);
       --green:     #1a8a50;
       --green-bg:  rgba(26,138,80,0.08);
       --green-bdr: rgba(26,138,80,0.22);
-      --r:         14px;
-      --rs:        9px;
-      --sidebar-w: 340px;
+      --r:         12px;
+      --rs:        8px;
     }
 
-    html, body {
-      height: 100%;
-      font-family: 'DM Sans', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--fg);
-      -webkit-font-smoothing: antialiased;
-    }
+    html, body { height: 100%; font-family: 'Geist', system-ui, sans-serif; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; overflow: hidden; }
 
-    /* ─── Shell ─── */
-    .shell {
-      display: grid;
-      grid-template-columns: var(--sidebar-w) 1fr;
-      min-height: 100vh;
-    }
+    /* ── Shell ── */
+    .shell { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }
 
-    /* ─── Sidebar ─── */
+    /* ── Sidebar ── */
     .sidebar {
-      background: #111009;
-      padding: 40px 32px 40px;
-      display: flex;
-      flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      overflow: hidden;
+      background: var(--ink);
+      padding: 32px 24px;
+      display: flex; flex-direction: column;
+      position: relative; overflow: hidden;
+      border-right: 1px solid var(--lined);
     }
-
-    /* mesh glow */
     .sidebar::before {
       content: '';
-      position: absolute;
-      top: -100px; left: -60px;
-      width: 380px; height: 380px;
-      background: radial-gradient(ellipse at 30% 30%, rgba(217,82,21,0.20) 0%, transparent 65%);
-      pointer-events: none;
-    }
-    .sidebar::after {
-      content: '';
-      position: absolute;
-      bottom: -80px; right: -80px;
-      width: 260px; height: 260px;
-      background: radial-gradient(ellipse, rgba(217,82,21,0.09) 0%, transparent 70%);
+      position: absolute; top: -80px; left: -80px;
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(217,82,21,0.18) 0%, transparent 70%);
       pointer-events: none;
     }
 
     /* Brand */
-    .brand {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 56px;
-      position: relative; z-index: 1;
-      text-decoration: none;
-    }
+    .brand { display: flex; align-items: center; gap: 9px; margin-bottom: 40px; position: relative; z-index: 1; text-decoration: none; }
     .brand-icon {
-      width: 30px; height: 30px; border-radius: 8px;
-      background: var(--accent);
-      display: grid; place-items: center;
-      box-shadow: 0 4px 12px rgba(217,82,21,0.35);
+      width: 28px; height: 28px; border-radius: 7px;
+      background: var(--accent); display: grid; place-items: center;
     }
-    .brand-icon svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-    .brand-name { font-size: 16px; font-weight: 600; letter-spacing: -0.025em; }
-    .brand-path { color: #e8e2d9; }
+    .brand-icon svg { width: 12px; height: 12px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .brand-name { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+    .brand-path { color: #ede9e3; }
     .brand-hire { color: var(--accent); }
 
-    /* Sidebar headline */
-    .sb-head { position: relative; z-index: 1; margin-bottom: 40px; }
-    .sb-head h2 {
-      font-family: 'DM Serif Display', Georgia, serif;
-      font-size: 26px; font-weight: 400;
-      color: #f0ece4;
-      line-height: 1.28;
-      margin-bottom: 12px;
-      letter-spacing: -0.01em;
+    /* Sidebar step list */
+    .sb-step-list { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; gap: 0; }
+    .sb-step-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0; position: relative; cursor: default;
     }
-    .sb-head p { font-size: 13px; color: #5a5450; line-height: 1.7; }
+    /* Vertical connector line */
+    .sb-step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 13px; top: 36px;
+      width: 2px; height: calc(100% - 16px);
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      transition: background 0.4s;
+    }
+    .sb-step-item.done::after { background: rgba(217,82,21,0.35); }
 
-    /* Divider */
-    .sb-divider {
-      height: 1px;
-      background: linear-gradient(90deg, rgba(255,255,255,0.07) 0%, transparent 100%);
-      margin-bottom: 32px;
-      position: relative; z-index: 1;
-    }
-
-    /* Feature list */
-    .feat-list { list-style: none; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
-    .feat-list li {
-      display: flex; align-items: flex-start; gap: 11px;
-      font-size: 12.5px; color: #6a6360; line-height: 1.5;
-    }
-    .feat-dot {
-      width: 20px; height: 20px; flex-shrink: 0; margin-top: 0px;
-      border-radius: 50%;
-      background: rgba(217,82,21,0.12);
-      border: 1px solid rgba(217,82,21,0.28);
+    .sb-dot {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
       display: grid; place-items: center;
+      font-size: 10px; font-weight: 700;
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid rgba(255,255,255,0.1);
+      color: #4a4540;
+      transition: all 0.3s;
     }
-    .feat-dot svg { width: 9px; height: 9px; stroke: var(--accent); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .sb-step-item.active .sb-dot {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+      box-shadow: 0 0 0 4px rgba(217,82,21,0.18);
+    }
+    .sb-step-item.done .sb-dot {
+      background: rgba(217,82,21,0.2); border-color: rgba(217,82,21,0.4); color: var(--accent);
+    }
+    .sb-dot-check { width: 10px; height: 10px; stroke: var(--accent); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
-    /* Step progress at bottom */
-    .sb-footer { margin-top: auto; position: relative; z-index: 1; }
-    .sb-track { display: flex; gap: 5px; margin-bottom: 10px; }
-    .sb-seg {
-      flex: 1; height: 3px; border-radius: 3px;
-      background: rgba(255,255,255,0.07);
-      transition: background 0.4s ease;
+    .sb-step-text { padding-top: 4px; }
+    .sb-step-name {
+      font-size: 12.5px; font-weight: 600; color: #3a3530;
+      transition: color 0.3s; line-height: 1;
+      margin-bottom: 3px;
     }
-    .sb-seg.done   { background: var(--accent); }
-    .sb-seg.active { background: rgba(217,82,21,0.45); }
-    .sb-step-label { font-size: 11px; color: #3e3a36; letter-spacing: 0.05em; }
-    .sb-step-label b { color: var(--accent); }
+    .sb-step-item.active .sb-step-name { color: #f0ece5; }
+    .sb-step-item.done .sb-step-name   { color: #6b6460; }
+    .sb-step-desc { font-size: 11px; color: #2e2b28; line-height: 1.4; }
+    .sb-step-item.active .sb-step-desc { color: #6b6460; }
 
-    /* ─── Main ─── */
-    .main {
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 60px 64px;
-      min-height: 100vh;
-    }
+    /* Sidebar footer */
+    .sb-footer { position: relative; z-index: 1; margin-top: 28px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 18px; }
+    .sb-progress-track { height: 2px; background: rgba(255,255,255,0.07); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
+    .sb-progress-fill  { height: 100%; background: var(--accent); border-radius: 2px; width: 0; transition: width 0.5s cubic-bezier(0.23,1,0.32,1); }
+    .sb-step-label { font-size: 11px; color: #3a3530; letter-spacing: 0.04em; }
+    .sb-step-label span { color: var(--accent); font-weight: 600; }
+
+    /* ── Main panel ── */
+    .main { display: flex; align-items: center; justify-content: center; padding: 48px 64px; overflow-y: auto; }
     .step-wrap { width: 100%; max-width: 480px; }
 
-    /* ─── Stepper ─── */
-    .stepper {
-      display: flex; align-items: center;
-      gap: 0; margin-bottom: 52px;
-    }
+    /* ── Compact top stepper (dots only) ── */
+    .stepper { display: flex; align-items: center; gap: 0; margin-bottom: 40px; }
     .step-node {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 10.5px; font-weight: 600;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      color: #c0b8b0;
+      display: flex; align-items: center; gap: 7px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: #b0a89e;
       transition: color 0.25s;
     }
     .step-node.active { color: var(--accent); }
     .step-node.done   { color: var(--green); }
     .step-ball {
-      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
       display: grid; place-items: center;
-      font-size: 11px; font-weight: 700;
-      background: var(--bg); color: #c0b8b0;
+      font-size: 10px; font-weight: 700;
+      background: rgba(0,0,0,0.04); color: #b0a89e;
       border: 1.5px solid var(--line);
       transition: all 0.25s;
     }
     .step-node.active .step-ball {
       background: var(--accent); color: #fff; border-color: var(--accent);
-      box-shadow: 0 0 0 5px rgba(217,82,21,0.13);
+      box-shadow: 0 0 0 4px rgba(217,82,21,0.12);
     }
     .step-node.done .step-ball {
       background: var(--green); color: #fff; border-color: var(--green);
     }
     .step-name { display: none; }
-    @media(min-width: 520px) { .step-name { display: inline; } }
-    .step-connector { flex: 1; height: 1.5px; background: var(--line); margin: 0 10px; border-radius: 2px; transition: background 0.3s; }
+    @media(min-width: 600px) { .step-name { display: inline; } }
+    .step-connector { flex: 1; height: 1.5px; background: var(--line); margin: 0 6px; border-radius: 2px; transition: background 0.3s; min-width: 16px; }
     .step-connector.done { background: var(--green); }
 
-    /* ─── Steps ─── */
-    .step { display: none; flex-direction: column; animation: fadeUp 0.28s cubic-bezier(0.23,1,0.32,1) both; }
+    /* ── Steps ── */
+    .step { display: none; flex-direction: column; animation: fadeUp 0.26s ease both; }
     .step.active { display: flex; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     .step-eyebrow {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 10px;
-    }
-    .step-eyebrow::before {
-      content: '';
-      display: block;
-      width: 16px; height: 1.5px;
-      background: var(--accent);
-      border-radius: 2px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
     }
     .step-title {
-      font-family: 'DM Serif Display', serif;
-      font-size: 30px; font-weight: 400;
-      color: var(--ink);
-      margin-bottom: 10px;
-      line-height: 1.2;
-      letter-spacing: -0.01em;
+      font-family: 'Instrument Serif', serif;
+      font-size: 27px; font-weight: 400; color: var(--ink);
+      margin-bottom: 8px; line-height: 1.2; letter-spacing: -0.01em;
     }
-    .step-sub {
-      font-size: 13.5px; color: var(--fg2);
-      margin-bottom: 36px; line-height: 1.7;
-      max-width: 400px;
-    }
+    .step-sub { font-size: 13.5px; color: var(--fg2); margin-bottom: 28px; line-height: 1.65; }
 
-    /* ─── Form ─── */
-    .field { margin-bottom: 22px; }
+    /* ── Form elements ── */
+    .field { margin-bottom: 18px; }
     .field-label {
-      display: block; font-size: 10.5px; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--fg2); margin-bottom: 8px;
+      display: block; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.09em; text-transform: uppercase;
+      color: var(--fg2); margin-bottom: 7px;
     }
     .field-input {
-      width: 100%; padding: 12px 15px;
+      width: 100%; padding: 11px 14px;
       border: 1.5px solid var(--line); border-radius: var(--rs);
-      font-size: 14px; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-family: 'Geist', sans-serif;
       color: var(--ink); background: var(--surface);
       outline: none; transition: border-color 0.18s, box-shadow 0.18s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     .field-input:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 4px rgba(217,82,21,0.09);
+      box-shadow: 0 0 0 3px rgba(217,82,21,0.1);
     }
-    .field-input::placeholder { color: #cec6bc; }
+    .field-input::placeholder { color: #c4bab0; }
+    textarea.field-input { resize: vertical; min-height: 90px; }
 
-    /* Seniority label */
-    .section-label {
-      font-size: 10.5px; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--fg2); margin-bottom: 10px; display: block;
+    /* Checkbox chips */
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 13px; border: 1.5px solid var(--line);
+      border-radius: 20px; cursor: pointer;
+      background: var(--surface); font-size: 12.5px; font-weight: 500;
+      color: var(--fg2); transition: all 0.18s; user-select: none;
     }
+    .chip:has(input:checked) {
+      border-color: var(--accent); background: var(--a10); color: var(--accent);
+    }
+    .chip input { display: none; }
 
     /* Radio cards */
-    .radio-grid { display: flex; flex-direction: column; gap: 9px; margin-bottom: 32px; }
+    .radio-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
     .radio-card {
-      display: flex; align-items: center; gap: 14px;
-      padding: 13px 16px;
-      border: 1.5px solid var(--line);
-      border-radius: var(--rs);
-      cursor: pointer;
-      background: var(--surface);
-      transition: all 0.18s;
-      user-select: none;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border: 1.5px solid var(--line);
+      border-radius: var(--rs); cursor: pointer;
+      background: var(--surface); transition: all 0.18s; user-select: none;
     }
-    .radio-card:hover { border-color: rgba(217,82,21,0.28); background: rgba(217,82,21,0.025); }
+    .radio-card:hover { border-color: rgba(217,82,21,0.3); background: rgba(217,82,21,0.03); }
     .radio-card:has(input:checked) {
-      border-color: var(--accent);
-      background: var(--accent-l);
-      box-shadow: 0 0 0 4px rgba(217,82,21,0.07), 0 1px 3px rgba(0,0,0,0.04);
+      border-color: var(--accent); background: var(--a10);
+      box-shadow: 0 0 0 3px rgba(217,82,21,0.08);
     }
-    /* Custom radio circle */
-    .radio-circle {
-      width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
-      border: 1.5px solid var(--line);
-      display: grid; place-items: center;
-      transition: all 0.18s;
-      background: var(--bg);
-    }
-    .radio-card:has(input:checked) .radio-circle {
-      border-color: var(--accent);
-      background: var(--accent);
-    }
-    .radio-circle::after {
-      content: '';
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: #fff;
-      opacity: 0;
-      transition: opacity 0.15s;
-    }
-    .radio-card:has(input:checked) .radio-circle::after { opacity: 1; }
-    .radio-card input { display: none; }
+    .radio-card input { accent-color: var(--accent); width: 14px; height: 14px; flex-shrink: 0; }
     .radio-card-body { flex: 1; }
     .radio-card-title { font-size: 13.5px; font-weight: 500; color: var(--ink); }
-    .radio-card-sub   { font-size: 11.5px; color: var(--fg2); margin-top: 2px; }
+    .radio-card-sub   { font-size: 11.5px; color: var(--fg2); margin-top: 1px; }
     .radio-card-badge {
-      font-size: 9px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.07em;
-      padding: 3px 8px; border-radius: 5px;
-      flex-shrink: 0;
+      font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 2px 7px; border-radius: 4px;
     }
-    .badge-entry  { color: #1f7a38; background: rgba(31,122,56,0.09); border: 1px solid rgba(31,122,56,0.2); }
-    .badge-mid    { color: #9a6a08; background: rgba(154,106,8,0.09); border: 1px solid rgba(154,106,8,0.2); }
-    .badge-senior { color: #6040b0; background: rgba(96,64,176,0.09); border: 1px solid rgba(96,64,176,0.2); }
+    .badge-entry  { color: #2a7a3b; background: rgba(42,122,59,0.1); border: 1px solid rgba(42,122,59,0.2); }
+    .badge-mid    { color: #b07d10; background: rgba(176,125,16,0.1); border: 1px solid rgba(176,125,16,0.22); }
+    .badge-senior { color: #6c45c0; background: rgba(108,69,192,0.1); border: 1px solid rgba(108,69,192,0.22); }
+
+    /* Salary range row */
+    .salary-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
 
     /* Primary button */
     .btn-primary {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 13px 24px; border-radius: var(--rs);
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 11px 22px; border-radius: var(--rs);
       background: var(--ink); color: #fff;
       border: none; cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13.5px; font-weight: 600;
-      letter-spacing: 0.01em;
-      transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
+      font-family: 'Geist', sans-serif; font-size: 13.5px; font-weight: 600;
+      transition: background 0.16s, transform 0.12s, box-shadow 0.16s;
       white-space: nowrap;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
-    .btn-primary:hover {
-      background: var(--accent);
-      box-shadow: 0 6px 18px rgba(217,82,21,0.28);
-    }
+    .btn-primary:hover { background: var(--accent); box-shadow: 0 4px 14px rgba(217,82,21,0.28); }
     .btn-primary:active { transform: scale(0.97); }
-    .btn-primary:disabled { opacity: 0.32; cursor: not-allowed; pointer-events: none; }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
     .btn-primary svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .btn-row { display: flex; align-items: center; gap: 12px; }
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 16px; border-radius: var(--rs);
+      background: transparent; color: var(--fg2);
+      border: 1.5px solid var(--line); cursor: pointer;
+      font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 500;
+      transition: all 0.16s;
+    }
+    .btn-back:hover { border-color: var(--fg3); color: var(--fg); }
+    .btn-back svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
     /* Drop zone */
     .dropzone {
-      border: 1.5px dashed rgba(0,0,0,0.14);
-      border-radius: var(--r);
-      padding: 40px 24px;
-      text-align: center;
-      cursor: pointer;
-      background: var(--surface);
+      position: relative; border: 1.5px dashed rgba(0,0,0,0.13);
+      border-radius: var(--r); padding: 32px 24px; text-align: center;
+      cursor: pointer; background: var(--bg);
       transition: border-color 0.2s, background 0.2s;
-      margin-bottom: 14px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      margin-bottom: 12px;
     }
-    .dropzone:hover, .dropzone.over {
-      border-color: var(--accent);
-      background: var(--accent-l);
-    }
+    .dropzone:hover, .dropzone.over { border-color: var(--accent); background: var(--a10); }
     .dropzone:hover .dz-icon svg { stroke: var(--accent); }
-    .dz-icon { margin-bottom: 12px; }
-    .dz-icon svg { width: 34px; height: 34px; stroke: var(--fg3); fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.18s; }
-    .dropzone h4 { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 5px; }
+    .dz-icon { margin-bottom: 10px; }
+    .dz-icon svg { width: 28px; height: 28px; stroke: var(--fg3); fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.18s; }
+    .dropzone h4 { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
     .dropzone p  { font-size: 12px; color: var(--fg2); }
-    .dropzone p u { color: var(--accent); cursor: pointer; text-decoration-color: rgba(217,82,21,0.4); }
+    .dropzone p u { color: var(--accent); cursor: pointer; text-decoration-color: var(--accent); }
 
     .file-selected {
-      display: flex; align-items: center; gap: 10px;
-      padding: 11px 14px; border-radius: var(--rs);
-      background: var(--accent-l); border: 1px solid var(--accent-m);
+      display: flex; align-items: center; gap: 9px;
+      padding: 10px 13px; border-radius: var(--rs);
+      background: var(--a10); border: 1px solid var(--a22);
       font-size: 13px; color: var(--accent); font-weight: 500;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
     .file-selected svg { width: 14px; height: 14px; flex-shrink: 0; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; }
     .file-selected span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* Resume on file */
     .resume-on-file {
-      display: flex; align-items: flex-start; gap: 13px;
-      padding: 16px 18px; border-radius: var(--r);
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 14px 16px; border-radius: var(--r);
       background: var(--green-bg); border: 1.5px solid var(--green-bdr);
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
     .rof-icon {
-      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-      background: rgba(26,138,80,0.12); border: 1px solid var(--green-bdr);
+      width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+      background: rgba(26,138,80,0.15); border: 1px solid var(--green-bdr);
       display: grid; place-items: center;
     }
     .rof-icon svg { width: 13px; height: 13px; stroke: var(--green); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
     .rof-title { font-size: 13px; font-weight: 600; color: #145c38; margin-bottom: 3px; }
-    .rof-sub   { font-size: 12px; color: #2a7a3b; line-height: 1.55; }
+    .rof-sub   { font-size: 12px; color: #2a7a3b; line-height: 1.5; }
 
-    /* ─── Setup screen ─── */
-    .setup-header { margin-bottom: 36px; }
+    /* ── Setup / progress screen ── */
+    .setup-header { text-align: center; margin-bottom: 28px; }
     .setup-header h2 {
-      font-family: 'DM Serif Display', serif;
-      font-size: 28px; font-weight: 400;
-      color: var(--ink); margin-bottom: 8px;
-      line-height: 1.2;
+      font-family: 'Instrument Serif', serif;
+      font-size: 26px; font-weight: 400; color: var(--ink); margin-bottom: 6px;
     }
-    .setup-header p { font-size: 13px; color: var(--fg2); line-height: 1.6; }
-
-    .progress-wrap { margin-bottom: 28px; }
-    .progress-track { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #f07040); border-radius: 4px; width: 0; transition: width 0.65s cubic-bezier(0.23,1,0.32,1); }
-    .progress-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
-    .progress-label { font-size: 11px; color: var(--fg3); }
-    .progress-pct   { font-size: 11px; font-weight: 600; color: var(--accent); }
+    .setup-header p { font-size: 13px; color: var(--fg2); }
 
     .task-list { display: flex; flex-direction: column; gap: 8px; }
     .task {
       display: flex; align-items: center; gap: 12px;
-      padding: 13px 16px;
-      border-radius: var(--rs);
-      border: 1.5px solid var(--line);
-      background: var(--surface);
+      padding: 12px 15px; border-radius: var(--rs);
+      border: 1px solid var(--line); background: var(--surface);
       font-size: 13px; color: var(--fg3);
-      transition: all 0.3s cubic-bezier(0.23,1,0.32,1);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: all 0.28s cubic-bezier(0.23,1,0.32,1);
     }
-    .task.running {
-      border-color: var(--accent-m); background: var(--accent-l); color: var(--ink);
-    }
-    .task.done {
-      border-color: var(--green-bdr); background: var(--green-bg); color: #145c38;
-    }
+    .task.running { border-color: var(--a22); background: var(--a10); color: var(--ink); }
+    .task.done    { border-color: var(--green-bdr); background: var(--green-bg); color: #145c38; }
     .task-status { flex-shrink: 0; width: 18px; display: grid; place-items: center; }
-    .task-idle   { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.12); }
-    .task-check  {
-      width: 17px; height: 17px; border-radius: 50%;
-      background: var(--green); display: grid; place-items: center;
-    }
+    .task-idle   { width: 7px; height: 7px; border-radius: 50%; background: rgba(0,0,0,0.12); }
+    .task-check  { width: 16px; height: 16px; border-radius: 50%; background: var(--green); display: grid; place-items: center; }
     .task-check svg { width: 8px; height: 8px; stroke: #fff; fill: none; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
     .spinner {
       width: 15px; height: 15px;
@@ -416,74 +329,34 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ─── Mobile hamburger / mobile header ─── */
-    .mobile-header {
-      display: none;
-      align-items: center; justify-content: space-between;
-      padding: 18px 20px;
-      background: #111009;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      position: sticky; top: 0; z-index: 100;
-    }
-    .mobile-brand {
-      display: flex; align-items: center; gap: 9px;
-      text-decoration: none;
-    }
-    .mobile-brand-icon {
-      width: 26px; height: 26px; border-radius: 7px;
-      background: var(--accent);
-      display: grid; place-items: center;
-    }
-    .mobile-brand-icon svg { width: 11px; height: 11px; stroke: #fff; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-    .mobile-brand-name {
-      font-size: 15px; font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-    .mobile-step-badge {
-      font-size: 11px; font-weight: 600;
-      color: var(--accent);
-      background: rgba(217,82,21,0.12);
-      border: 1px solid rgba(217,82,21,0.22);
-      padding: 4px 10px; border-radius: 20px;
-      letter-spacing: 0.04em;
-    }
+    .progress-wrap { margin-bottom: 24px; }
+    .progress-bar  { height: 3px; background: var(--line); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; width: 0; transition: width 0.6s cubic-bezier(0.23,1,0.32,1); }
+    .progress-label { font-size: 11px; color: var(--fg3); text-align: right; margin-top: 6px; }
 
-    /* ─── Responsive ─── */
-    @media (max-width: 800px) {
+    /* Info note */
+    .info-note {
+      display: flex; gap: 9px; align-items: flex-start;
+      padding: 11px 13px; border-radius: var(--rs);
+      background: rgba(0,0,0,0.025); border: 1px solid var(--line);
+      font-size: 12px; color: var(--fg2); line-height: 1.55;
+      margin-bottom: 22px;
+    }
+    .info-note svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 1px; stroke: var(--fg3); fill: none; stroke-width: 2; stroke-linecap: round; }
+
+    @media (max-width: 740px) {
       .shell { grid-template-columns: 1fr; }
       .sidebar { display: none; }
-      .mobile-header { display: flex; }
-      .main { padding: 32px 20px 60px; align-items: flex-start; }
-      .stepper { margin-bottom: 36px; }
-      .step-title { font-size: 24px; }
-    }
-
-    @media (max-width: 480px) {
-      .main { padding: 24px 16px 50px; }
-      .step-title { font-size: 22px; }
-      .btn-primary { width: 100%; justify-content: center; }
+      .main { padding: 28px 20px; align-items: flex-start; }
+      html, body { overflow: auto; }
+      .salary-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-
-<!-- Mobile top bar -->
-<header class="mobile-header">
-  <a href="/" class="mobile-brand">
-    <div class="mobile-brand-icon">
-      <svg viewBox="0 0 13 13">
-        <path d="M2 2 L8 6.5 L2 11" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        <circle cx="10.5" cy="6.5" r="1.6" fill="#fff"/>
-      </svg>
-    </div>
-    <span style="color:#e8e2d9;"><span>Path</span><span style="color:var(--accent)">Hire</span></span>
-  </a>
-  <div class="mobile-step-badge" id="mobile-step-badge">Step 1 of 3</div>
-</header>
-
 <div class="shell">
 
-  <!-- ─── Sidebar ─── -->
+  <!-- ── Sidebar ── -->
   <aside class="sidebar">
     <a href="/" class="brand">
       <div class="brand-icon">
@@ -492,76 +365,95 @@
           <circle cx="10.5" cy="6.5" r="1.6" fill="#fff"/>
         </svg>
       </div>
-      <span class="brand-name">
+      <span style="display:flex;gap:0;font-size:15px;font-weight:700;letter-spacing:-0.02em;">
         <span class="brand-path">Path</span><span class="brand-hire">Hire</span>
       </span>
     </a>
 
-    <div class="sb-head">
-      <h2>Let's get<br><em>you</em> hired.</h2>
-      <p>Three quick steps and we'll personalise your entire job search — from first match to final offer.</p>
+    <!-- Vertical step list -->
+    <div class="sb-step-list">
+      <div class="sb-step-item active" id="sb-item-1">
+        <div class="sb-dot" id="sb-dot-1">1</div>
+        <div class="sb-step-text">
+          <div class="sb-step-name">Target Role</div>
+          <div class="sb-step-desc">Job title &amp; seniority level</div>
+        </div>
+      </div>
+      <div class="sb-step-item" id="sb-item-2">
+        <div class="sb-dot" id="sb-dot-2">2</div>
+        <div class="sb-step-text">
+          <div class="sb-step-name">Job Preferences</div>
+          <div class="sb-step-desc">Location, type &amp; salary range</div>
+        </div>
+      </div>
+      <div class="sb-step-item" id="sb-item-3">
+        <div class="sb-dot" id="sb-dot-3">3</div>
+        <div class="sb-step-text">
+          <div class="sb-step-name">Skills &amp; Tools</div>
+          <div class="sb-step-desc">Key skills you want highlighted</div>
+        </div>
+      </div>
+      <div class="sb-step-item" id="sb-item-4">
+        <div class="sb-dot" id="sb-dot-4">4</div>
+        <div class="sb-step-text">
+          <div class="sb-step-name">Upload Resume</div>
+          <div class="sb-step-desc">PDF for AI matching &amp; scoring</div>
+        </div>
+      </div>
+      <div class="sb-step-item" id="sb-item-5">
+        <div class="sb-dot" id="sb-dot-5">5</div>
+        <div class="sb-step-text">
+          <div class="sb-step-name">Setting Up</div>
+          <div class="sb-step-desc">Personalising your dashboard</div>
+        </div>
+      </div>
     </div>
 
-    <div class="sb-divider"></div>
-
-    <ul class="feat-list">
-      <li>
-        <span class="feat-dot"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></span>
-        Real-time remote job matching based on your skills
-      </li>
-      <li>
-        <span class="feat-dot"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></span>
-        AI resume scoring with actionable improvement tips
-      </li>
-      <li>
-        <span class="feat-dot"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></span>
-        Role-specific resume tailoring per application
-      </li>
-      <li>
-        <span class="feat-dot"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></span>
-        Verified recruiter contact details surfaced for you
-      </li>
-      <li>
-        <span class="feat-dot"><svg viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg></span>
-        Centralised application tracker and status board
-      </li>
-    </ul>
-
     <div class="sb-footer">
-      <div class="sb-track">
-        <div class="sb-seg" id="sb-seg-1"></div>
-        <div class="sb-seg" id="sb-seg-2"></div>
-        <div class="sb-seg" id="sb-seg-3"></div>
+      <div class="sb-progress-track">
+        <div class="sb-progress-fill" id="sb-prog-fill"></div>
       </div>
-      <div class="sb-step-label" id="sb-label">Step <b>1</b> of 3</div>
+      <div class="sb-step-label" id="sb-label">Step <span>1</span> of 5</div>
     </div>
   </aside>
 
-  <!-- ─── Main ─── -->
+  <!-- ── Main ── -->
   <main class="main">
     <div class="step-wrap">
 
-      <!-- Stepper dots -->
+      <!-- Top stepper dots -->
       <div class="stepper">
         <div class="step-node active" id="dot-1">
           <div class="step-ball">1</div>
-          <span class="step-name">Target Role</span>
+          <span class="step-name">Role</span>
         </div>
         <div class="step-connector" id="conn-1"></div>
         <div class="step-node" id="dot-2">
           <div class="step-ball">2</div>
-          <span class="step-name">Resume</span>
+          <span class="step-name">Prefs</span>
         </div>
         <div class="step-connector" id="conn-2"></div>
         <div class="step-node" id="dot-3">
           <div class="step-ball">3</div>
-          <span class="step-name">Setting Up</span>
+          <span class="step-name">Skills</span>
+        </div>
+        <div class="step-connector" id="conn-3"></div>
+        <div class="step-node" id="dot-4">
+          <div class="step-ball">4</div>
+          <span class="step-name">Resume</span>
+        </div>
+        <div class="step-connector" id="conn-4"></div>
+        <div class="step-node" id="dot-5">
+          <div class="step-ball">5</div>
+          <span class="step-name">Setup</span>
         </div>
       </div>
 
-      <!-- ── Step 1 ── -->
+      <!-- ────────────────────────────────────────
+           Step 1 — Target Role
+      ──────────────────────────────────────── -->
       <div class="step active" id="step-1">
-        <div class="step-eyebrow">Step 1 of 3</div>
+        <div class="step-eyebrow">Step 1 of 5</div>
         <h1 class="step-title">What role are you targeting?</h1>
         <p class="step-sub">We'll use your target role and seniority to surface the most relevant remote opportunities and calibrate your resume score.</p>
 
@@ -569,14 +461,13 @@
           <label class="field-label">Job Title</label>
           <input class="field-input" id="job-title" type="text"
                  placeholder="e.g. Software Engineer, Product Manager…"
-                 value="">
+                 value="{{ current_user.inferred_role or '' }}">
         </div>
 
-        <span class="section-label">Seniority Level</span>
+        <label class="field-label" style="margin-bottom:10px;">Seniority Level</label>
         <div class="radio-grid">
           <label class="radio-card">
             <input type="radio" name="exp" value="Entry">
-            <div class="radio-circle"></div>
             <div class="radio-card-body">
               <div class="radio-card-title">Entry Level</div>
               <div class="radio-card-sub">0 – 2 years of professional experience</div>
@@ -585,7 +476,6 @@
           </label>
           <label class="radio-card">
             <input type="radio" name="exp" value="Mid">
-            <div class="radio-circle"></div>
             <div class="radio-card-body">
               <div class="radio-card-title">Mid Level</div>
               <div class="radio-card-sub">2 – 5 years of professional experience</div>
@@ -594,7 +484,6 @@
           </label>
           <label class="radio-card">
             <input type="radio" name="exp" value="Senior">
-            <div class="radio-circle"></div>
             <div class="radio-card-body">
               <div class="radio-card-title">Senior Level</div>
               <div class="radio-card-sub">5+ years of professional experience</div>
@@ -609,12 +498,140 @@
         </button>
       </div>
 
-      <!-- ── Step 2 ── -->
+      <!-- ────────────────────────────────────────
+           Step 2 — Job Preferences
+      ──────────────────────────────────────── -->
       <div class="step" id="step-2">
-        <div class="step-eyebrow">Step 2 of 3</div>
+        <div class="step-eyebrow">Step 2 of 5</div>
+        <h1 class="step-title">Your job preferences</h1>
+        <p class="step-sub">Tell us what kind of role you're looking for. This helps us filter opportunities that actually match your situation.</p>
+
+        <div class="field">
+          <label class="field-label">Work Type</label>
+          <div class="chip-grid">
+            <label class="chip"><input type="checkbox" name="work_type" value="Remote"> 🌍 Remote</label>
+            <label class="chip"><input type="checkbox" name="work_type" value="Hybrid"> 🏢 Hybrid</label>
+            <label class="chip"><input type="checkbox" name="work_type" value="On-site"> 📍 On-site</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Employment Type</label>
+          <div class="chip-grid">
+            <label class="chip"><input type="checkbox" name="emp_type" value="Full-time"> Full-time</label>
+            <label class="chip"><input type="checkbox" name="emp_type" value="Contract"> Contract</label>
+            <label class="chip"><input type="checkbox" name="emp_type" value="Part-time"> Part-time</label>
+            <label class="chip"><input type="checkbox" name="emp_type" value="Internship"> Internship</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Preferred Location <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--fg3)">(optional)</span></label>
+          <input class="field-input" id="pref-location" type="text" placeholder="e.g. New York, London, or Anywhere">
+        </div>
+
+        <div class="salary-row">
+          <div class="field" style="margin-bottom:0;">
+            <label class="field-label">Min Salary (USD/yr)</label>
+            <input class="field-input" id="salary-min" type="number" placeholder="e.g. 80000" min="0" step="1000">
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label class="field-label">Max Salary (USD/yr)</label>
+            <input class="field-input" id="salary-max" type="number" placeholder="e.g. 140000" min="0" step="1000">
+          </div>
+        </div>
+
+        <div style="margin-top:24px;" class="btn-row">
+          <button class="btn-back" onclick="navTo(1)">
+            <svg viewBox="0 0 14 14"><line x1="12" y1="7" x2="2" y2="7"/><polyline points="6,3 2,7 6,11"/></svg>
+            Back
+          </button>
+          <button class="btn-primary" onclick="goStep3()">
+            Continue
+            <svg viewBox="0 0 14 14"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────────
+           Step 3 — Skills & Tools
+      ──────────────────────────────────────── -->
+      <div class="step" id="step-3">
+        <div class="step-eyebrow">Step 3 of 5</div>
+        <h1 class="step-title">Highlight your top skills</h1>
+        <p class="step-sub">Select skills that you're most confident in. We'll weight job matches and resume suggestions around these.</p>
+
+        <div class="info-note">
+          <svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5"/><line x1="7" y1="5" x2="7" y2="7.5"/><circle cx="7" cy="9.5" r="0.5" fill="var(--fg3)" stroke="none"/></svg>
+          You can update your skills anytime from your profile settings.
+        </div>
+
+        <div class="field">
+          <label class="field-label">Technical / Core Skills</label>
+          <div class="chip-grid" id="skill-chips">
+            <label class="chip"><input type="checkbox" name="skill" value="Python"> Python</label>
+            <label class="chip"><input type="checkbox" name="skill" value="JavaScript"> JavaScript</label>
+            <label class="chip"><input type="checkbox" name="skill" value="TypeScript"> TypeScript</label>
+            <label class="chip"><input type="checkbox" name="skill" value="React"> React</label>
+            <label class="chip"><input type="checkbox" name="skill" value="Node.js"> Node.js</label>
+            <label class="chip"><input type="checkbox" name="skill" value="SQL"> SQL</label>
+            <label class="chip"><input type="checkbox" name="skill" value="AWS"> AWS</label>
+            <label class="chip"><input type="checkbox" name="skill" value="Docker"> Docker</label>
+            <label class="chip"><input type="checkbox" name="skill" value="Product Strategy"> Product Strategy</label>
+            <label class="chip"><input type="checkbox" name="skill" value="Data Analysis"> Data Analysis</label>
+            <label class="chip"><input type="checkbox" name="skill" value="Machine Learning"> Machine Learning</label>
+            <label class="chip"><input type="checkbox" name="skill" value="Figma"> Figma</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Additional Skills <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--fg3)">(optional — one per line)</span></label>
+          <textarea class="field-input" id="extra-skills" placeholder="e.g. Kubernetes&#10;Agile / Scrum&#10;Technical Writing"></textarea>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-back" onclick="navTo(2)">
+            <svg viewBox="0 0 14 14"><line x1="12" y1="7" x2="2" y2="7"/><polyline points="6,3 2,7 6,11"/></svg>
+            Back
+          </button>
+          <button class="btn-primary" onclick="goStep4()">
+            Continue
+            <svg viewBox="0 0 14 14"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────────
+           Step 4 — Upload Resume
+           FIX: POST to /onboarding/upload-resume (not /resume which is pay-gated)
+      ──────────────────────────────────────── -->
+      <div class="step" id="step-4">
+        <div class="step-eyebrow">Step 4 of 5</div>
         <h1 class="step-title">Upload your resume</h1>
         <p class="step-sub">Your resume is the foundation of everything — matching, scoring, and tailoring. We only accept PDF to preserve your formatting.</p>
 
+        {% if current_user.resume_text %}
+        <div class="resume-on-file">
+          <div class="rof-icon">
+            <svg viewBox="0 0 14 14"><polyline points="2,7.5 5.5,11 12,3.5"/></svg>
+          </div>
+          <div>
+            <div class="rof-title">Resume already on file</div>
+            <div class="rof-sub">We'll use your existing resume for matching and scoring. You can replace it anytime from the Resume page.</div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-back" onclick="navTo(3)">
+            <svg viewBox="0 0 14 14"><line x1="12" y1="7" x2="2" y2="7"/><polyline points="6,3 2,7 6,11"/></svg>
+            Back
+          </button>
+          <button class="btn-primary" onclick="goStep5()">
+            Continue to setup
+            <svg viewBox="0 0 14 14"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
+          </button>
+        </div>
+
+        {% else %}
         <div class="dropzone" id="dropzone" onclick="document.getElementById('resume-file').click()">
           <div class="dz-icon">
             <svg viewBox="0 0 24 24">
@@ -634,38 +651,37 @@
           <span id="file-name">—</span>
         </div>
 
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn-primary" style="background:var(--bg);color:var(--fg);border:1.5px solid var(--line);box-shadow:none;" onclick="goBack1()">
-            <svg viewBox="0 0 14 14" style="transform:rotate(180deg)"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
+        <div class="btn-row">
+          <button class="btn-back" onclick="navTo(3)">
+            <svg viewBox="0 0 14 14"><line x1="12" y1="7" x2="2" y2="7"/><polyline points="6,3 2,7 6,11"/></svg>
             Back
           </button>
-          <button class="btn-primary" id="step2-btn" onclick="uploadAndContinue()" disabled>
+          <button class="btn-primary" id="step4-btn" onclick="uploadAndContinue()" disabled>
             Upload &amp; Continue
             <svg viewBox="0 0 14 14"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
           </button>
         </div>
+        {% endif %}
       </div>
 
-      <!-- ── Step 3 ── -->
-      <div class="step" id="step-3">
+      <!-- ────────────────────────────────────────
+           Step 5 — Setting Up
+      ──────────────────────────────────────── -->
+      <div class="step" id="step-5">
         <div class="setup-header">
-          <div class="step-eyebrow">Step 3 of 3</div>
-          <h2>Setting things up…</h2>
-          <p>This usually takes under a minute. Please stay on this page.</p>
+          <h2>Almost there…</h2>
+          <p>We're personalising your dashboard. You'll be redirected to complete payment shortly.</p>
         </div>
 
         <div class="progress-wrap">
-          <div class="progress-track"><div class="progress-fill" id="prog-fill"></div></div>
-          <div class="progress-meta">
-            <div class="progress-label" id="prog-text">Starting…</div>
-            <div class="progress-pct" id="prog-label">0%</div>
-          </div>
+          <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+          <div class="progress-label" id="prog-label">0%</div>
         </div>
 
         <div class="task-list">
           <div class="task" id="task-1">
             <div class="task-status" id="ts-1"><div class="task-idle"></div></div>
-            Saving your role preferences
+            Saving your role &amp; preferences
           </div>
           <div class="task" id="task-2">
             <div class="task-status" id="ts-2"><div class="task-idle"></div></div>
@@ -681,7 +697,7 @@
           </div>
           <div class="task" id="task-5">
             <div class="task-status" id="ts-5"><div class="task-idle"></div></div>
-            Building your personalised job board
+            Preparing your secure checkout
           </div>
         </div>
       </div>
@@ -692,48 +708,73 @@
 
 <script>
   let selectedFile = null;
+  const TOTAL_STEPS = 5;
 
-  /* ── Helpers ── */
-  function showStep(n) {
-    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-    document.getElementById('step-' + n).classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  /* ── Sidebar state sync ── */
+  function setSidebarStep(step) {
+    for (let i = 1; i <= TOTAL_STEPS; i++) {
+      const item = document.getElementById('sb-item-' + i);
+      const dot  = document.getElementById('sb-dot-' + i);
+      if (i < step) {
+        item.className = 'sb-step-item done';
+        dot.innerHTML  = '<svg class="sb-dot-check" viewBox="0 0 10 10"><polyline points="2,5.5 4,8 8,2.5"/></svg>';
+      } else if (i === step) {
+        item.className = 'sb-step-item active';
+        dot.textContent = i;
+      } else {
+        item.className = 'sb-step-item';
+        dot.textContent = i;
+      }
+    }
+    const pct = Math.round(((step - 1) / TOTAL_STEPS) * 100);
+    document.getElementById('sb-prog-fill').style.width = pct + '%';
+    const label = document.getElementById('sb-label');
+    label.innerHTML = step <= TOTAL_STEPS
+      ? `Step <span>${step}</span> of ${TOTAL_STEPS}`
+      : `<span>Complete</span>`;
   }
 
+  /* ── Top stepper dots ── */
   function setDot(n, state) {
     const d = document.getElementById('dot-' + n);
     d.className = 'step-node ' + state;
     d.querySelector('.step-ball').textContent = state === 'done' ? '✓' : n;
   }
-
   function setConnector(n, done) {
     document.getElementById('conn-' + n).classList.toggle('done', done);
   }
 
-  function setSbProgress(step) {
-    ['1','2','3'].forEach(i => {
-      const seg = document.getElementById('sb-seg-' + i);
-      const idx = parseInt(i);
-      seg.className = 'sb-seg' + (idx < step ? ' done' : idx === step ? ' active' : '');
-    });
-    const label = document.getElementById('sb-label');
-    const mBadge = document.getElementById('mobile-step-badge');
-    if (step < 4) {
-      label.innerHTML = `Step <b>${step}</b> of 3`;
-      if (mBadge) mBadge.textContent = `Step ${step} of 3`;
-    } else {
-      label.innerHTML = `<b>Complete ✓</b>`;
-      if (mBadge) mBadge.textContent = `Complete ✓`;
-    }
+  /* ── Show step ── */
+  function showStep(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('step-' + n).classList.add('active');
+    setSidebarStep(n);
   }
 
-  function setProgress(pct, text) {
+  /* ── Generic navigate (used by Back buttons) ── */
+  function navTo(n) {
+    // Mark current step as appropriate
+    const cur = getCurrentStep();
+    setDot(cur, n < cur ? 'active' : '');
+    for (let i = 1; i < n; i++) { setDot(i, 'done'); setConnector(i, true); }
+    setDot(n, 'active');
+    showStep(n);
+  }
+
+  function getCurrentStep() {
+    for (let i = 1; i <= TOTAL_STEPS; i++) {
+      if (document.getElementById('step-' + i).classList.contains('active')) return i;
+    }
+    return 1;
+  }
+
+  /* ── Progress bar (step 5) ── */
+  function setProgress(pct) {
     document.getElementById('prog-fill').style.width = pct + '%';
     document.getElementById('prog-label').textContent = pct + '%';
-    if (text) document.getElementById('prog-text').textContent = text;
   }
 
-  /* ── Navigation ── */
+  /* ── Step 1 → 2 ── */
   function goStep2() {
     const title = document.getElementById('job-title').value.trim();
     const exp   = document.querySelector('input[name="exp"]:checked');
@@ -743,15 +784,38 @@
     sessionStorage.setItem('ob_exp',  exp.value);
     const el = document.getElementById('task-role');
     if (el) el.textContent = title;
-    setDot(1, 'done'); setConnector(1, true); setDot(2, 'active'); setSbProgress(2); showStep(2);
+    setDot(1, 'done'); setConnector(1, true); setDot(2, 'active');
+    showStep(2);
   }
 
-  function goBack1() {
-    setDot(2, ''); setConnector(1, false); setDot(1, 'active'); setSbProgress(1); showStep(1);
-  }
-
+  /* ── Step 2 → 3 ── */
   function goStep3() {
-    setDot(2, 'done'); setConnector(2, true); setDot(3, 'active'); setSbProgress(3); showStep(3); runSetup();
+    const workTypes = [...document.querySelectorAll('input[name="work_type"]:checked')].map(i => i.value);
+    const empTypes  = [...document.querySelectorAll('input[name="emp_type"]:checked')].map(i => i.value);
+    sessionStorage.setItem('ob_work_type',  JSON.stringify(workTypes));
+    sessionStorage.setItem('ob_emp_type',   JSON.stringify(empTypes));
+    sessionStorage.setItem('ob_location',   document.getElementById('pref-location').value.trim());
+    sessionStorage.setItem('ob_salary_min', document.getElementById('salary-min').value);
+    sessionStorage.setItem('ob_salary_max', document.getElementById('salary-max').value);
+    setDot(2, 'done'); setConnector(2, true); setDot(3, 'active');
+    showStep(3);
+  }
+
+  /* ── Step 3 → 4 ── */
+  function goStep4() {
+    const checkedSkills = [...document.querySelectorAll('input[name="skill"]:checked')].map(i => i.value);
+    const extraText     = document.getElementById('extra-skills').value.trim();
+    const extraSkills   = extraText ? extraText.split('\n').map(s => s.trim()).filter(Boolean) : [];
+    sessionStorage.setItem('ob_skills', JSON.stringify([...checkedSkills, ...extraSkills]));
+    setDot(3, 'done'); setConnector(3, true); setDot(4, 'active');
+    showStep(4);
+  }
+
+  /* ── Step 4 → 5 ── */
+  function goStep5() {
+    setDot(4, 'done'); setConnector(4, true); setDot(5, 'active');
+    showStep(5);
+    runSetup();
   }
 
   /* ── File handling ── */
@@ -762,9 +826,10 @@
     selectedFile = file;
     document.getElementById('file-name').textContent = file.name;
     document.getElementById('file-selected').style.display = 'flex';
-    document.getElementById('step2-btn').disabled = false;
+    document.getElementById('step4-btn').disabled = false;
   }
 
+  // Drag-drop
   const dz = document.getElementById('dropzone');
   if (dz) {
     dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
@@ -782,13 +847,16 @@
 
   async function uploadAndContinue() {
     if (!selectedFile) return;
-    const btn = document.getElementById('step2-btn');
+    const btn = document.getElementById('step4-btn');
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner" style="border-color:rgba(255,255,255,0.25);border-top-color:#fff;width:13px;height:13px;"></div> Uploading…';
     const form = new FormData();
     form.append('resume_pdf', selectedFile);
-    try { await fetch('/resume', { method: 'POST', body: form }); } catch (_) {}
-    goStep3();
+    try {
+      /* FIX: POST to /onboarding/upload-resume — NOT /resume (which is pay-gated) */
+      await fetch('/onboarding/upload-resume', { method: 'POST', body: form });
+    } catch (_) {}
+    goStep5();
   }
 
   /* ── Task runner ── */
@@ -807,61 +875,80 @@
 
   function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-  async function savePreferences() {
+  async function saveAllPreferences() {
     try {
+      const skills = JSON.parse(sessionStorage.getItem('ob_skills') || '[]');
       await fetch('/onboarding/save-preferences', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          role: sessionStorage.getItem('ob_role') || '',
-          experience_level: sessionStorage.getItem('ob_exp') || ''
+          role:              sessionStorage.getItem('ob_role') || '',
+          experience_level:  sessionStorage.getItem('ob_exp') || '',
+          work_type:         JSON.parse(sessionStorage.getItem('ob_work_type') || '[]'),
+          employment_type:   JSON.parse(sessionStorage.getItem('ob_emp_type') || '[]'),
+          preferred_location: sessionStorage.getItem('ob_location') || '',
+          salary_min:        sessionStorage.getItem('ob_salary_min') || '',
+          salary_max:        sessionStorage.getItem('ob_salary_max') || '',
+          skills:            skills,
         }),
       });
     } catch (_) {}
   }
 
+  let _paymentUrl = null;
   async function completeOnboarding() {
-    try { await fetch('/onboarding/complete', { method: 'POST' }); } catch (_) {}
+    try {
+      const resp = await fetch('/onboarding/complete', { method: 'POST' });
+      const data = await resp.json();
+      if (data.redirect_url) _paymentUrl = data.redirect_url;
+    } catch (_) {}
     await delay(600);
   }
 
   const TASKS = [
-    { id: 1, fn: savePreferences,    pct: 20,  text: 'Saving preferences…' },
-    { id: 2, fn: () => delay(1200),  pct: 40,  text: 'Importing resume…' },
-    { id: 3, fn: () => delay(1800),  pct: 65,  text: 'Running AI analysis…' },
-    { id: 4, fn: () => delay(1400),  pct: 85,  text: 'Finding matching jobs…' },
-    { id: 5, fn: completeOnboarding, pct: 100, text: 'Almost done!' },
+    { id: 1, fn: saveAllPreferences,    pct: 20 },
+    { id: 2, fn: () => delay(1200),     pct: 40 },
+    { id: 3, fn: () => delay(1800),     pct: 65 },
+    { id: 4, fn: () => delay(1400),     pct: 85 },
+    { id: 5, fn: completeOnboarding,    pct: 100 },
   ];
 
   async function runSetup() {
     for (const t of TASKS) {
       setTaskState(t.id, 'running');
-      setProgress(t.pct - 10, t.text);
       await t.fn();
       setTaskState(t.id, 'done');
-      setProgress(t.pct, t.text);
+      setProgress(t.pct);
       await delay(200);
     }
-    setSbProgress(4);
+    setSidebarStep(6); // marks all done
     await delay(500);
-    window.location.href = '/jobs';
+    window.location.href = _paymentUrl || '/pricing';
   }
 
+  /* ── Input validation flash ── */
   function flashInvalid(id, msg) {
     const el = document.getElementById(id);
     el.style.borderColor = '#d95215';
-    el.style.boxShadow   = '0 0 0 4px rgba(217,82,21,0.12)';
+    el.style.boxShadow   = '0 0 0 3px rgba(217,82,21,0.12)';
     el.focus();
     setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 2200);
-    const prev = el.placeholder;
-    el.setAttribute('placeholder', msg);
-    setTimeout(() => el.setAttribute('placeholder', prev), 2200);
+    if (msg) el.setAttribute('placeholder', msg);
+    setTimeout(() => el.setAttribute('placeholder', 'e.g. Software Engineer, Product Manager…'), 2200);
   }
 
-  /* Init sidebar */
-  setSbProgress(1);
+  /* ── Pre-fill role from server ── */
+  const inferred = "{{ current_user.inferred_role or '' }}";
+  if (inferred) {
+    const tr = document.getElementById('task-role');
+    if (tr) tr.textContent = inferred;
+  }
 
+  /* ── Enter key on job title → advance ── */
   const jtInput = document.getElementById('job-title');
   if (jtInput) jtInput.addEventListener('keydown', e => { if (e.key === 'Enter') goStep2(); });
+
+  /* ── Init sidebar on load ── */
+  setSidebarStep(1);
 </script>
 </body>
 </html>

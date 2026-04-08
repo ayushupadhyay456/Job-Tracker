@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ayush Project — Premium Career Intelligence</title>
+    <title>PathHire — Premium Career Intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
@@ -30,25 +30,21 @@
             overflow-x: hidden;
         }
 
-        /* 3D Canvas Container */
         #canvas-container {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: 1;
             pointer-events: none;
         }
 
-        /* Layout Shell */
         .shell { 
             min-height: 100vh; 
             display: flex; 
             flex-direction: column; 
             padding: 40px 56px; 
             position: relative; 
-            z-index: 2; /* Sits above 3D */
+            z-index: 2;
         }
         
         .shell::before {
@@ -58,7 +54,6 @@
             z-index: -1;
         }
 
-        /* Navigation */
         nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; margin-bottom: 80px; }
         .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
         .logo-mark { width: 32px; height: 32px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; }
@@ -67,12 +62,168 @@
         .btn-nav { font-size: 14px; font-weight: 500; padding: 10px 20px; border-radius: 8px; background: var(--accent); color: var(--paper); text-decoration: none; transition: transform 0.2s; }
         .btn-nav:hover { transform: scale(1.05); }
 
-        /* Hero */
         .hero { position: relative; z-index: 5; max-width: 800px; margin-bottom: 100px; }
         .hero-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 24px; }
         .hero-title { font-family: var(--serif); font-size: clamp(48px, 8vw, 84px); line-height: 1.05; letter-spacing: -.03em; margin-bottom: 32px; }
         .hero-title em { font-style: italic; color: var(--accent-2); }
         .hero-desc { font-size: 18px; color: rgba(250,248,245,.55); line-height: 1.7; max-width: 520px; margin-bottom: 48px; }
+
+        /* ── JOB MATCH FEATURE SECTION ── */
+        .feature-section {
+            position: relative; z-index: 5;
+            padding: 100px 56px;
+            border-top: 1px solid rgba(250,248,245,.08);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            width: calc(100% + 112px);
+            margin-left: -56px;
+            justify-items: center;
+        }
+
+        .feature-text { max-width: 460px; justify-self: end; padding-right: 20px; }
+        .feature-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 20px; }
+        .feature-title { font-family: var(--serif); font-size: clamp(32px, 4vw, 52px); line-height: 1.1; letter-spacing: -.02em; margin-bottom: 20px; }
+        .feature-desc { font-size: 16px; color: rgba(250,248,245,.5); line-height: 1.7; margin-bottom: 36px; max-width: 400px; }
+        .btn-feature { display: inline-block; font-size: 15px; font-weight: 600; padding: 14px 28px; border-radius: 10px; background: var(--paper); color: var(--ink); text-decoration: none; transition: transform 0.2s, background 0.2s; }
+        .btn-feature:hover { transform: scale(1.04); background: #fffdf9; }
+
+        /* Cards Stack */
+        .feature-cards {
+            position: relative;
+            height: 420px;
+        }
+
+        /* Background decorative cards */
+        .feature-cards::before {
+            content: '';
+            position: absolute;
+            top: 20px; left: 20px; right: -20px; bottom: -20px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(250,248,245,0.06);
+            border-radius: 20px;
+            transform: rotate(3deg);
+        }
+        .feature-cards::after {
+            content: '';
+            position: absolute;
+            top: 10px; left: 10px; right: -10px; bottom: -10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(250,248,245,0.07);
+            border-radius: 20px;
+            transform: rotate(1.5deg);
+        }
+
+        /* Main job card */
+        .job-card {
+            position: relative; z-index: 2;
+            background: rgba(30, 27, 24, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(250,248,245,0.12);
+            border-radius: 20px;
+            padding: 28px;
+            width: 100%;
+        }
+
+        .job-card-header {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .job-card-company {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .company-logo {
+            width: 44px; height: 44px; border-radius: 10px;
+            background: #1a1a1a;
+            border: 1px solid rgba(250,248,245,0.1);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--syne); font-size: 13px; font-weight: 800; color: var(--paper);
+        }
+        .job-card-meta { }
+        .job-posted { font-size: 11px; color: var(--ink-3); margin-bottom: 3px; }
+        .job-title { font-size: 15px; font-weight: 600; color: var(--paper); }
+        .job-company { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+
+        .score-badge-main {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: #22c55e;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .score-badge-main .score-num { font-size: 17px; font-weight: 700; color: #fff; line-height: 1; }
+        .score-badge-main .score-label { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        /* Score meters row */
+        .score-meters {
+            display: flex; gap: 16px; margin-bottom: 24px;
+        }
+        .score-meter {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .score-ring {
+            width: 52px; height: 52px;
+            position: relative;
+        }
+        .score-ring svg { width: 52px; height: 52px; transform: rotate(-90deg); }
+        .score-ring-bg { fill: none; stroke: rgba(250,248,245,0.08); stroke-width: 3; }
+        .score-ring-fill { fill: none; stroke: #22c55e; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+        .score-ring-text {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 600; color: var(--paper);
+        }
+        .score-meter-label { font-size: 11px; color: var(--ink-3); text-align: center; }
+
+        /* Fit tags */
+        .fit-section { }
+        .fit-heading { font-size: 12px; font-weight: 600; color: var(--paper); margin-bottom: 10px; }
+        .fit-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .fit-tag {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 500;
+        }
+        .fit-tag--pass {
+            background: rgba(34,197,94,0.12);
+            border: 1px solid rgba(34,197,94,0.3);
+            color: #4ade80;
+        }
+        .fit-tag--fail {
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            color: #f87171;
+        }
+        .fit-tag-icon { font-size: 11px; }
+
+        /* Second smaller card */
+        .job-card-mini {
+            margin-top: 16px;
+            position: relative; z-index: 2;
+            background: rgba(25, 23, 20, 0.9);
+            border: 1px solid rgba(250,248,245,0.08);
+            border-radius: 16px;
+            padding: 18px 22px;
+            display: flex; align-items: center; gap: 16px;
+        }
+        .mini-logo {
+            width: 36px; height: 36px; border-radius: 8px;
+            background: #2a1f1a; border: 1px solid rgba(250,248,245,0.08);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--syne); font-size: 10px; font-weight: 800; color: var(--accent-2);
+            flex-shrink: 0;
+        }
+        .mini-info { flex: 1; }
+        .mini-title { font-size: 13px; font-weight: 600; color: var(--paper); }
+        .mini-company { font-size: 11px; color: var(--ink-3); }
+        .mini-score {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(34,197,94,0.15);
+            border: 2px solid rgba(34,197,94,0.4);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #4ade80;
+            flex-shrink: 0;
+        }
 
         /* Pricing Grid */
         .pricing-section { position: relative; z-index: 5; padding: 100px 0; border-top: 1px solid rgba(250,248,245,.08); display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -81,7 +232,7 @@
 
         .plans-grid { display: flex; justify-content: center; gap: 24px; max-width: 1200px; width: 100%; flex-wrap: wrap; }
         .plan-card {
-            background: rgba(15, 14, 13, 0.8); /* Slight opacity to see 3D behind */
+            background: rgba(15, 14, 13, 0.8);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(250,248,245,.1); border-radius: 24px;
             padding: 48px 32px; width: 320px; text-align: left; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -101,7 +252,6 @@
         .plan-cta:hover { background: var(--paper); color: var(--ink); }
         .plan-cta--featured { background: var(--accent); border-color: var(--accent); }
 
-        /* Footer */
         footer { background: #080808; padding: 80px 56px 40px; border-top: 1px solid rgba(250,248,245,.05); position: relative; z-index: 10; }
         .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 2fr; gap: 40px; max-width: 1200px; margin: 0 auto 60px; }
         .footer-col h4 { font-family: var(--syne); font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px; color: var(--paper); }
@@ -110,6 +260,13 @@
         .footer-col ul li a { color: var(--ink-3); text-decoration: none; font-size: 14px; transition: color .2s; }
         .footer-col ul li a:hover { color: var(--accent-2); }
         .footer-bottom { display: flex; justify-content: space-between; border-top: 1px solid rgba(250,248,245,0.05); padding-top: 24px; color: var(--ink-3); font-size: 12px; }
+
+        @media (max-width: 1000px) {
+            .feature-section { grid-template-columns: 1fr; gap: 48px; width: 100%; margin-left: 0; padding: 60px 0; }
+            .feature-text { justify-self: start; padding-right: 0; }
+            .feature-cards { height: auto; }
+            .feature-cards::before, .feature-cards::after { display: none; }
+        }
 
         @media (max-width: 900px) {
             .shell { padding: 30px 24px; }
@@ -123,15 +280,12 @@
             .shell { padding: 24px 18px; }
             nav { margin-bottom: 50px; }
             .logo-name { font-size: 17px; }
-
             .hero { margin-bottom: 60px; }
             .hero-desc { font-size: 16px; }
             .btn-nav[style] { padding: 14px 24px !important; font-size: 15px !important; }
-
             .plans-grid { flex-direction: column; align-items: center; gap: 16px; }
             .plan-card { width: 100%; max-width: 380px; padding: 32px 22px; }
             .plan-card--featured { transform: none; }
-
             .pricing-section { padding: 60px 0; }
             .footer-grid { grid-template-columns: 1fr 1fr; gap: 28px; }
             footer { padding: 50px 24px 28px; }
@@ -140,13 +294,10 @@
         @media (max-width: 480px) {
             nav { flex-wrap: wrap; gap: 12px; }
             .logo-name { font-size: 16px; }
-
             .hero-title { font-size: clamp(32px, 9vw, 42px); }
             .hero-desc { font-size: 15px; }
-
             .plans-grid { padding: 0 4px; }
             .plan-card { max-width: 100%; }
-
             .footer-grid { grid-template-columns: 1fr; gap: 24px; }
             .footer-bottom { flex-direction: column; gap: 8px; }
         }
@@ -160,7 +311,7 @@
     <nav>
         <a href="/" class="logo">
             <div class="logo-mark"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="#faf8f5" stroke-width="1.6" stroke-linecap="round"/></svg></div>
-            <span class="logo-name">Ayush <span>Project</span></span>
+            <span class="logo-name">Path<span>Hire</span></span>
         </a>
         <div style="display: flex; gap: 24px; align-items: center;">
             <a href="/login" style="color: rgba(250,248,245,.6); text-decoration: none; font-size: 14px;">Sign in</a>
@@ -170,11 +321,106 @@
 
     <div class="hero">
         <p class="hero-eyebrow">Career Intelligence</p>
-        <h1 class="hero-title">Beat the <em>robot</em>.<br>Land the dream job.</h1>
-        <p class="hero-desc">We score your resume against the world's top remote jobs. Beat the ATS, instantly analyze recruiter emails, and get the edge you need.</p>
+        <h1 class="hero-title">Your career,<br><em>intelligently</em> matched.</h1>
+        <p class="hero-desc">We score your resume against the world's top remote jobs. Cut through the noise, surface your best opportunities, and get the edge you need.</p>
         <a href="/signup" class="btn-nav" style="padding: 16px 32px; font-size: 16px;">Start your 7-day free trial</a>
     </div>
 
+    <!-- ── NEW: AI JOB MATCH FEATURE SECTION ── -->
+    <div class="feature-section">
+        <div class="feature-text">
+            <p class="feature-eyebrow">AI-Powered Matching</p>
+            <h2 class="feature-title">Personalized AI<br>Job Matches</h2>
+            <p class="feature-desc">See jobs you're truly qualified for, matched to your real skills. No fake listings, no guesswork — just your fit score with honest reasons why.</p>
+            <a href="/signup" class="btn-feature">Find My Matches</a>
+        </div>
+
+        <div class="feature-cards">
+            <!-- Primary job card -->
+            <div class="job-card">
+                <div class="job-card-header">
+                    <div class="job-card-company">
+                        <div class="company-logo">RW</div>
+                        <div class="job-card-meta">
+                            <p class="job-posted">1 hour ago</p>
+                            <p class="job-title">Senior Data Analyst</p>
+                            <p class="job-company">Series B · Remote</p>
+                        </div>
+                    </div>
+                    <div class="score-badge-main">
+                        <span class="score-num">95<sup style="font-size:10px">%</sup></span>
+                        <span class="score-label">Overall</span>
+                    </div>
+                </div>
+
+                <div class="score-meters">
+                    <div class="score-meter">
+                        <div class="score-ring">
+                            <svg viewBox="0 0 52 52">
+                                <circle class="score-ring-bg" cx="26" cy="26" r="21"/>
+                                <circle class="score-ring-fill" cx="26" cy="26" r="21"
+                                    stroke-dasharray="131.9"
+                                    stroke-dashoffset="6.6"/>
+                            </svg>
+                            <div class="score-ring-text">95<span style="font-size:8px">%</span></div>
+                        </div>
+                        <span class="score-meter-label">Exp. Level</span>
+                    </div>
+                    <div class="score-meter">
+                        <div class="score-ring">
+                            <svg viewBox="0 0 52 52">
+                                <circle class="score-ring-bg" cx="26" cy="26" r="21"/>
+                                <circle class="score-ring-fill" cx="26" cy="26" r="21"
+                                    stroke-dasharray="131.9"
+                                    stroke-dashoffset="9.2"/>
+                            </svg>
+                            <div class="score-ring-text">93<span style="font-size:8px">%</span></div>
+                        </div>
+                        <span class="score-meter-label">Skill</span>
+                    </div>
+                    <div class="score-meter">
+                        <div class="score-ring">
+                            <svg viewBox="0 0 52 52">
+                                <circle class="score-ring-bg" cx="26" cy="26" r="21"/>
+                                <circle class="score-ring-fill" cx="26" cy="26" r="21"
+                                    stroke-dasharray="131.9"
+                                    stroke-dashoffset="5.3"/>
+                            </svg>
+                            <div class="score-ring-text">96<span style="font-size:8px">%</span></div>
+                        </div>
+                        <span class="score-meter-label">Industry Exp.</span>
+                    </div>
+                </div>
+
+                <div class="fit-section">
+                    <p class="fit-heading">Why You Are A Good Fit</p>
+                    <div class="fit-tags">
+                        <span class="fit-tag fit-tag--pass">
+                            <span class="fit-tag-icon">✓</span> Experience Level
+                        </span>
+                        <span class="fit-tag fit-tag--fail">
+                            <span class="fit-tag-icon">✕</span> Education
+                        </span>
+                        <span class="fit-tag fit-tag--pass">
+                            <span class="fit-tag-icon">✓</span> Tech Stack
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary mini card -->
+            <div class="job-card-mini">
+                <div class="mini-logo">NR</div>
+                <div class="mini-info">
+                    <p class="mini-title">Product Analyst</p>
+                    <p class="mini-company">Growth Stage · 3 hours ago</p>
+                </div>
+                <div class="mini-score">88%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Section -->
     <div class="pricing-section" id="pricing">
         <p style="font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 16px;">Premium Access</p>
         <h2 class="pricing-heading">Three ways to <em>grow</em>.</h2>
@@ -224,7 +470,7 @@
 <footer>
     <div class="footer-grid">
         <div class="footer-col">
-            <div style="font-family: var(--syne); font-weight: 800; font-size: 20px; margin-bottom: 16px;">Ayush<span style="color: var(--accent-2);">Project</span></div>
+            <div style="font-family: var(--syne); font-weight: 800; font-size: 20px; margin-bottom: 16px;">Path<span style="color: var(--accent-2);">Hire</span></div>
             <p style="font-size: 13px; color: var(--ink-3); line-height: 1.6;">Built for professionals who value their time. Stop guessing, start matching.</p>
         </div>
         <div class="footer-col">
@@ -252,7 +498,7 @@
         </div>
     </div>
     <div class="footer-bottom">
-        <p>&copy; 2026 Ayush Project. All rights reserved.</p>
+        <p>&copy; 2026 PathHire. All rights reserved.</p>
         <p>Built for the global workforce.</p>
     </div>
 </footer>
@@ -264,25 +510,21 @@
 
     function init() {
         scene = new THREE.Scene();
-
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
         camera.position.z = 1;
         camera.rotation.x = Math.PI / 2;
 
         renderer = new THREE.WebGLRenderer({ 
-            antialias: false, // Turn off for massive performance boost
+            antialias: false,
             alpha: true, 
             powerPreference: "high-performance" 
         });
-        
-        // LIMIT PIXEL RATIO to 2 (Crucial for performance)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
         starGeo = new THREE.BufferGeometry();
         let positions = [];
-        // Reduced to 1500 for better mobile/laptop performance
         for (let i = 0; i < 1500; i++) {
             positions.push(Math.random() * 600 - 300);
             positions.push(Math.random() * 600 - 300);
@@ -292,7 +534,7 @@
 
         let starMaterial = new THREE.PointsMaterial({
             color: 0xc8511a, 
-            size: 1.2, // Slightly larger to compensate for fewer particles
+            size: 1.2,
             transparent: true,
             opacity: 0.5,
             blending: THREE.AdditiveBlending
@@ -302,9 +544,7 @@
         scene.add(stars);
 
         window.addEventListener('resize', onWindowResize, false);
-        // Passive listener for better scroll/mouse performance
         document.addEventListener('mousemove', onMouseMove, { passive: true });
-        
         animate();
     }
 
@@ -321,15 +561,11 @@
 
     function animate() {
         requestAnimationFrame(animate);
-
-        // Smooth Lerping (Linear Interpolation)
         currentX += (targetX - currentX) * 0.02; 
         currentY += (targetY - currentY) * 0.02;
-
         stars.rotation.y += 0.0005;
         stars.position.x = currentX;
         stars.position.y = -currentY;
-
         renderer.render(scene, camera);
     }
 

@@ -539,6 +539,117 @@
   .status-Rejected     { color:#8b1c1c; background:rgba(201,48,48,.08);  border-color:rgba(201,48,48,.25); }
   .status-Withdrawn    { color:var(--fg3); background:var(--bg); }
 
+  /* ── Job Preferences Panel ── */
+  .prefs-panel {
+    margin-top: 32px;
+    background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: 14px; overflow: hidden;
+  }
+  .prefs-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .prefs-head h2 {
+    font-size: 14px; font-weight: 700; letter-spacing: -.02em; color: var(--dark);
+    display: flex; align-items: center; gap: 8px; margin: 0;
+  }
+  .prefs-head h2 svg { width: 14px; height: 14px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; }
+  .prefs-edit-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'Geist', sans-serif; font-size: 11.5px; font-weight: 600;
+    color: var(--accent); background: var(--a12); border: 1px solid var(--a25);
+    padding: 5px 12px; border-radius: 7px; cursor: pointer;
+    transition: background .14s, box-shadow .14s;
+  }
+  .prefs-edit-btn:hover { background: var(--a25); box-shadow: 0 2px 8px var(--a25); }
+  .prefs-edit-btn svg { width: 10px; height: 10px; stroke: var(--accent); fill: none; stroke-width: 2.2; stroke-linecap: round; }
+
+  .prefs-body { padding: 16px 20px; }
+  .prefs-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .pref-item {
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 9px; padding: 10px 12px;
+  }
+  .pref-label { font-size: 9.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--fg3); margin-bottom: 4px; }
+  .pref-val { font-size: 13px; font-weight: 600; color: var(--dark); }
+  .pref-empty { color: var(--fg3); font-weight: 400; font-style: italic; }
+
+  /* Edit form (hidden by default) */
+  .prefs-form { display: none; margin-top: 16px; }
+  .prefs-form.open { display: block; }
+  .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pf-group { display: flex; flex-direction: column; gap: 4px; }
+  .pf-group label { font-size: 10.5px; font-weight: 600; color: var(--fg2); letter-spacing: .04em; }
+  .pf-group input, .pf-group select {
+    font-family: 'Geist', sans-serif; font-size: 12.5px; color: var(--dark);
+    background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: 8px; padding: 7px 10px; outline: none;
+    transition: border-color .14s, box-shadow .14s;
+  }
+  .pf-group input:focus, .pf-group select:focus {
+    border-color: var(--a25); box-shadow: 0 0 0 3px rgba(217,82,21,.07);
+  }
+  .pf-salary-row { display: flex; gap: 8px; align-items: center; }
+  .pf-salary-row input { flex: 1; }
+  .pf-salary-sep { font-size: 11px; color: var(--fg3); flex-shrink: 0; }
+  .pf-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .pf-save-btn {
+    flex: 1; padding: 9px 0; border-radius: 8px;
+    background: var(--dark); color: #fff; border: none;
+    font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background .14s, transform .12s;
+  }
+  .pf-save-btn:hover { background: var(--accent); transform: translateY(-1px); }
+  .pf-cancel-btn {
+    padding: 9px 18px; border-radius: 8px;
+    background: var(--bg); color: var(--fg2);
+    border: 1.5px solid var(--line);
+    font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .14s;
+  }
+  .pf-cancel-btn:hover { border-color: rgba(0,0,0,.2); color: var(--dark); }
+
+  /* ── Skills Panel ── */
+  .skills-panel {
+    margin-top: 16px;
+    background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: 14px; overflow: hidden;
+  }
+  .skills-head {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .skills-head h2 {
+    font-size: 14px; font-weight: 700; letter-spacing: -.02em; color: var(--dark);
+    display: flex; align-items: center; gap: 8px; margin: 0;
+  }
+  .skills-head h2 svg { width: 14px; height: 14px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; }
+  .skills-count { font-size: 10px; font-weight: 700; background: var(--a12); color: var(--accent); border: 1px solid var(--a25); padding: 2px 7px; border-radius: 20px; }
+  .skills-body { padding: 14px 20px; }
+  .skills-wrap { display: flex; flex-wrap: wrap; gap: 7px; }
+  .skill-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11.5px; font-weight: 500; color: var(--fg);
+    background: var(--bg); border: 1px solid var(--line);
+    padding: 4px 10px; border-radius: 7px;
+    transition: border-color .14s, background .14s;
+  }
+  .skill-tag:hover { border-color: var(--a25); background: var(--a12); color: var(--accent); }
+  .skills-empty { font-size: 12.5px; color: var(--fg3); }
+
+  @media (max-width: 700px) {
+    .prefs-grid { grid-template-columns: 1fr 1fr; }
+    .pf-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .prefs-grid { grid-template-columns: 1fr; }
+  }
+
   /* ── Plan Details + ATS Download row ── */
   .plan-ats-row {
     display: grid;
@@ -689,7 +800,7 @@
 
 <!-- ── Page header ── -->
 <div class="ph">
-  <div class="ph-eye">Remote Opportunities</div>
+  <div class="ph-eye">AI-Matched Opportunities</div>
   <h1 class="ph-title">
     {% if has_resume and current_user.inferred_role %}
       Jobs for {{ current_user.inferred_role }}
@@ -725,7 +836,7 @@
   <div class="stat-card">
     <div class="slabel">Total Listings</div>
     <div class="sval">{{ total }}</div>
-    <div class="sdesc">Remote matches</div>
+    <div class="sdesc">AI-matched jobs</div>
   </div>
   <div class="stat-card">
     <div class="slabel">High Match</div>
@@ -830,7 +941,6 @@
       </div>
       <div class="card-badges">
         {% if score >= 80 %}<span class="badge-top">Top Pick</span>{% endif %}
-        <span class="remote-tag">Remote</span>
         <span class="applied-badge">✓ Applied</span>
         <span class="saved-tag">♥ Saved</span>
       </div>
@@ -1070,6 +1180,137 @@
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     JOB PREFERENCES PANEL
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="prefs-panel">
+  <div class="prefs-head">
+    <h2>
+      <svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5"/><path d="M7 4v3l2 1.5"/></svg>
+      Job Preferences
+    </h2>
+    <button class="prefs-edit-btn" onclick="togglePrefsEdit()">
+      <svg viewBox="0 0 12 12"><path d="M9 1l2 2-7 7H2V8z"/></svg>
+      Edit
+    </button>
+  </div>
+  <div class="prefs-body">
+    <!-- Read-only view -->
+    <div class="prefs-grid" id="prefsView">
+      <div class="pref-item">
+        <div class="pref-label">Target Role</div>
+        <div class="pref-val" id="pvRole">{{ user_prefs.role or '<span class="pref-empty">Not set</span>' }}</div>
+      </div>
+      <div class="pref-item">
+        <div class="pref-label">Experience</div>
+        <div class="pref-val" id="pvExp">{{ user_prefs.experience_level or '<span class="pref-empty">Not set</span>' }}</div>
+      </div>
+      <div class="pref-item">
+        <div class="pref-label">Preferred Location</div>
+        <div class="pref-val" id="pvLoc">{{ user_prefs.preferred_location or '<span class="pref-empty">Any / Remote</span>' }}</div>
+      </div>
+      <div class="pref-item">
+        <div class="pref-label">Work Type</div>
+        <div class="pref-val" id="pvWork">{{ user_prefs.work_type or '<span class="pref-empty">Not set</span>' }}</div>
+      </div>
+      <div class="pref-item">
+        <div class="pref-label">Employment Type</div>
+        <div class="pref-val" id="pvEmp">{{ user_prefs.employment_type or '<span class="pref-empty">Not set</span>' }}</div>
+      </div>
+      <div class="pref-item">
+        <div class="pref-label">Salary Range (₹/yr)</div>
+        <div class="pref-val" id="pvSalary">
+          {% if user_prefs.salary_min or user_prefs.salary_max %}
+            ₹{{ '{:,.0f}'.format(user_prefs.salary_min|int) if user_prefs.salary_min else '—' }}
+            – ₹{{ '{:,.0f}'.format(user_prefs.salary_max|int) if user_prefs.salary_max else '—' }}
+          {% else %}
+            <span class="pref-empty">Not set</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit form -->
+    <div class="prefs-form" id="prefsForm">
+      <div class="pf-grid">
+        <div class="pf-group">
+          <label>Target Role</label>
+          <input type="text" id="pfRole" value="{{ user_prefs.role }}" placeholder="e.g. Software Engineer">
+        </div>
+        <div class="pf-group">
+          <label>Experience Level</label>
+          <select id="pfExp">
+            <option value="">Select…</option>
+            {% for lvl in ['Entry Level','Junior','Mid-Level','Senior','Lead','Manager','Director'] %}
+            <option value="{{ lvl }}" {{ 'selected' if user_prefs.experience_level == lvl else '' }}>{{ lvl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="pf-group">
+          <label>Preferred Location</label>
+          <input type="text" id="pfLoc" value="{{ user_prefs.preferred_location }}" placeholder="e.g. Bangalore, Remote">
+        </div>
+        <div class="pf-group">
+          <label>Work Type</label>
+          <select id="pfWork">
+            <option value="">Select…</option>
+            {% for wt in ['Remote','Hybrid','On-site'] %}
+            <option value="{{ wt }}" {{ 'selected' if user_prefs.work_type == wt else '' }}>{{ wt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="pf-group">
+          <label>Employment Type</label>
+          <select id="pfEmp">
+            <option value="">Select…</option>
+            {% for et in ['Full-time','Part-time','Contract','Freelance','Internship'] %}
+            <option value="{{ et }}" {{ 'selected' if user_prefs.employment_type == et else '' }}>{{ et }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="pf-group">
+          <label>Salary Range (₹/yr)</label>
+          <div class="pf-salary-row">
+            <input type="number" id="pfSalMin" placeholder="Min" value="{{ user_prefs.salary_min }}">
+            <span class="pf-salary-sep">–</span>
+            <input type="number" id="pfSalMax" placeholder="Max" value="{{ user_prefs.salary_max }}">
+          </div>
+        </div>
+      </div>
+      <div class="pf-actions">
+        <button class="pf-cancel-btn" onclick="togglePrefsEdit()">Cancel</button>
+        <button class="pf-save-btn" onclick="savePrefs()">Save Preferences</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SKILLS FROM RESUME
+     ══════════════════════════════════════════════════════════════════════════ -->
+{% if has_resume %}
+<div class="skills-panel">
+  <div class="skills-head">
+    <h2>
+      <svg viewBox="0 0 14 14"><polyline points="1,10 5,5 8,8 13,2"/></svg>
+      Skills from Resume
+    </h2>
+    <span class="skills-count" id="skillsCount">{{ skills_list|length }}</span>
+  </div>
+  <div class="skills-body">
+    {% if skills_list %}
+    <div class="skills-wrap">
+      {% for skill in skills_list %}
+      <span class="skill-tag">{{ skill }}</span>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="skills-empty">No skills extracted yet. <a href="/resume" style="color:var(--accent);font-weight:600;text-decoration:none;">Re-upload your resume</a> to extract skills.</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      PLAN DETAILS + ATS DOWNLOAD  (shown to all logged-in users)
@@ -1436,6 +1677,70 @@ async function updateStatus(appId, sel) {
 
 // Load tracker on page ready
 document.addEventListener('DOMContentLoaded', loadApplications);
+
+/* ════════════════════════════════════════════════════════════════════
+   JOB PREFERENCES
+   ════════════════════════════════════════════════════════════════════ */
+
+function togglePrefsEdit() {
+  const form = document.getElementById('prefsForm');
+  const view = document.getElementById('prefsView');
+  const isOpen = form.classList.contains('open');
+  form.classList.toggle('open', !isOpen);
+  view.style.display = isOpen ? '' : 'none';
+  // Update button label
+  document.querySelector('.prefs-edit-btn').innerHTML = isOpen
+    ? `<svg viewBox="0 0 12 12" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;"><path d="M9 1l2 2-7 7H2V8z"/></svg> Edit`
+    : `<svg viewBox="0 0 12 12" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg> Cancel`;
+}
+
+async function savePrefs() {
+  const btn = document.querySelector('.pf-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const payload = {
+    role:               document.getElementById('pfRole').value.trim(),
+    experience_level:   document.getElementById('pfExp').value,
+    preferred_location: document.getElementById('pfLoc').value.trim(),
+    work_type:          document.getElementById('pfWork').value,
+    employment_type:    document.getElementById('pfEmp').value,
+    salary_min:         document.getElementById('pfSalMin').value,
+    salary_max:         document.getElementById('pfSalMax').value,
+  };
+
+  try {
+    const res  = await fetch('/jobs/update-prefs', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      // Update read-only view
+      const fmt = n => n ? '₹' + Number(n).toLocaleString('en-IN') : '—';
+      document.getElementById('pvRole').textContent    = payload.role    || '—';
+      document.getElementById('pvExp').textContent     = payload.experience_level || '—';
+      document.getElementById('pvLoc').textContent     = payload.preferred_location || 'Any / Remote';
+      document.getElementById('pvWork').textContent    = payload.work_type || '—';
+      document.getElementById('pvEmp').textContent     = payload.employment_type || '—';
+      const salMin = payload.salary_min, salMax = payload.salary_max;
+      document.getElementById('pvSalary').textContent =
+        (salMin || salMax) ? `${fmt(salMin)} – ${fmt(salMax)}` : 'Not set';
+      togglePrefsEdit();
+      // Show brief toast-like success using existing showToast if available
+      if (typeof showToast === 'function') showToast('success', '✓ Preferences saved!');
+    } else {
+      alert('Could not save preferences: ' + (data.error || 'unknown error'));
+    }
+  } catch (err) {
+    alert('Network error. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Preferences';
+  }
+}
 </script>
 
 {% endblock %}

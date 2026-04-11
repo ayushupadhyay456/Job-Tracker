@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary Benchmarker — PathHire</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--ink:#0f0e0d;--ink-3:#8a8278;--paper:#faf8f5;--accent:#c8511a;--accent-2:#e8764a;--sans:'DM Sans',sans-serif;}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        html,body{background:var(--ink);color:var(--paper);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
+        a{color:inherit;}
+        .page-wrap{max-width:760px;margin:0 auto;padding:64px 24px 100px;}
+        .eyebrow{font-size:12px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--accent-2);margin-bottom:14px;}
+        h1{font-family:'DM Serif Display',serif;font-size:clamp(28px,5vw,46px);line-height:1.1;letter-spacing:-.03em;margin-bottom:20px;}
+        h2{font-family:'DM Serif Display',serif;font-size:22px;line-height:1.2;margin:36px 0 12px;}
+        p{font-size:15px;color:rgba(250,248,245,.6);line-height:1.85;margin-bottom:14px;}
+        strong{color:var(--paper);}
+        .card{background:rgba(255,255,255,.04);border:1px solid rgba(250,248,245,.08);border-radius:14px;padding:28px;margin-bottom:20px;}
+        .accent-card{background:rgba(200,81,26,.06);border:1px solid rgba(200,81,26,.18);border-radius:14px;padding:28px;margin-bottom:20px;}
+        label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-bottom:8px;}
+        input,textarea,select{width:100%;padding:11px 14px;border:1px solid rgba(250,248,245,.1);border-radius:9px;font-size:14px;font-family:var(--sans);background:rgba(255,255,255,.04);color:var(--paper);outline:none;transition:border-color .2s;}
+        input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+        select option{background:#1a1814;color:var(--paper);}
+        .btn{display:inline-block;background:var(--accent);color:var(--paper);text-decoration:none;border:none;font-size:14px;font-weight:600;padding:12px 24px;border-radius:9px;cursor:pointer;font-family:var(--sans);}
+        .meta{font-size:13px;color:var(--ink-3);margin-bottom:40px;}
+        .back-link{font-size:13px;color:var(--accent-2);text-decoration:none;font-weight:500;display:inline-block;margin-bottom:28px;}
+    </style>
+</head>
+<body>
+{% from "_public_layout.html" import public_nav, public_footer %}
+{{ public_nav() }}
+<div class="page-wrap">
+    <p class="eyebrow">AI Tool</p>
+    <h1>Salary Benchmarker</h1>
+    <p>Find out what your role is worth in the current market. Enter your title, experience, and location to see real salary ranges.</p>
+    <div class="card" style="margin-top:32px;">
+        <form method="POST" action="/tools/salary-benchmarker" style="display:flex;flex-direction:column;gap:18px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div><label>Job Title</label><input type="text" name="job_title" placeholder="e.g. Software Engineer" required></div>
+                <div><label>Location / Remote</label><input type="text" name="location" placeholder="e.g. Remote / New York"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div><label>Years of Experience</label>
+                    <select name="experience">
+                        <option value="0-2">0–2 years</option><option value="3-5">3–5 years</option>
+                        <option value="6-9">6–9 years</option><option value="10+">10+ years</option>
+                    </select>
+                </div>
+                <div><label>Industry</label>
+                    <select name="industry">
+                        <option>Technology</option><option>Finance</option><option>Healthcare</option>
+                        <option>Marketing</option><option>Design</option><option>Other</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn" style="align-self:flex-start;">Get Salary Range →</button>
+        </form>
+    </div>
+    {% if salary_data %}
+    <div class="card" style="margin-top:20px;">
+        <h2 style="margin-top:0;font-size:16px;margin-bottom:20px;">Market Salary Range</h2>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div style="background:rgba(255,255,255,.03);border-radius:10px;padding:20px;text-align:center;">
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;">25th Pct</div>
+                <div style="font-size:26px;font-weight:700;">{{ salary_data.p25 }}</div>
+            </div>
+            <div class="accent-card" style="text-align:center;margin:0;">
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--accent-2);margin-bottom:8px;">Median</div>
+                <div style="font-size:26px;font-weight:700;color:var(--accent-2);">{{ salary_data.median }}</div>
+            </div>
+            <div style="background:rgba(255,255,255,.03);border-radius:10px;padding:20px;text-align:center;">
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;">75th Pct</div>
+                <div style="font-size:26px;font-weight:700;">{{ salary_data.p75 }}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{{ public_footer() }}
+</body>
+</html>

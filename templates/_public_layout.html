@@ -1,0 +1,80 @@
+{% macro public_nav() %}
+<nav style="position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:32px 56px;border-bottom:1px solid rgba(250,248,245,.06);">
+    <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <div style="width:30px;height:30px;border-radius:7px;background:#c8511a;display:flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="#faf8f5" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
+        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:#faf8f5;">PathHire</span>
+    </a>
+    <div style="display:flex;gap:24px;align-items:center;">
+        <a href="/#how" style="color:rgba(250,248,245,.5);text-decoration:none;font-size:14px;">How it works</a>
+        <a href="/#pricing" style="color:rgba(250,248,245,.5);text-decoration:none;font-size:14px;">Pricing</a>
+        <a href="/login" style="color:rgba(250,248,245,.5);text-decoration:none;font-size:14px;">Sign in</a>
+        <a href="/signup" style="font-size:14px;font-weight:500;padding:9px 18px;border-radius:8px;background:#c8511a;color:#faf8f5;text-decoration:none;">Get Started</a>
+    </div>
+</nav>
+{% endmacro %}
+
+{% macro public_footer() %}
+<footer style="background:var(--ink);padding:64px 56px 40px;border-top:1px solid rgba(250,248,245,.06);">
+    <div style="max-width:1200px;margin:0 auto;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:48px;">
+            <a href="/" style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#faf8f5;text-decoration:none;">PathHire</a>
+            <div style="display:flex;gap:10px;">
+                <a href="#" style="width:34px;height:34px;border-radius:50%;background:rgba(250,248,245,.08);color:#faf8f5;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;transition:background .2s;" onmouseover="this.style.background='#c8511a'" onmouseout="this.style.background='rgba(250,248,245,.08)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
+                <a href="#" style="width:34px;height:34px;border-radius:50%;background:rgba(250,248,245,.08);color:#faf8f5;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;transition:background .2s;" onmouseover="this.style.background='#c8511a'" onmouseout="this.style.background='rgba(250,248,245,.08)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg></a>
+                <a href="#" style="width:34px;height:34px;border-radius:50%;background:rgba(250,248,245,.08);color:#faf8f5;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:background .2s;" onmouseover="this.style.background='#c8511a'" onmouseout="this.style.background='rgba(250,248,245,.08)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.258 5.628L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+                <a href="#" style="width:34px;height:34px;border-radius:50%;background:rgba(250,248,245,.08);color:#faf8f5;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:background .2s;" onmouseover="this.style.background='#c8511a'" onmouseout="this.style.background='rgba(250,248,245,.08)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg></a>
+                <a href="#" style="width:34px;height:34px;border-radius:50%;background:rgba(250,248,245,.08);color:#faf8f5;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:background .2s;" onmouseover="this.style.background='#c8511a'" onmouseout="this.style.background='rgba(250,248,245,.08)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:32px;margin-bottom:48px;">
+            <div>
+                <h4 style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#faf8f5;margin-bottom:16px;">Features</h4>
+                <ul style="list-style:none;">
+                    <li style="margin-bottom:10px;"><a href="/resume" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">AI Resume Scorer</a></li>
+                    <li style="margin-bottom:10px;"><a href="/jobs" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Smart Job Matching</a></li>
+                    <li style="margin-bottom:10px;"><a href="/dashboard" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Recruiter Email Tracker</a></li>
+                    <li style="margin-bottom:10px;"><a href="/cover-letter" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Cover Letter Generator</a></li>
+                    <li style="margin-bottom:10px;"><a href="/jobs" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Remote Job Board</a></li>
+                    <li style="margin-bottom:10px;"><a href="/resume" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">ATS Optimiser</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#faf8f5;margin-bottom:16px;">Resources</h4>
+                <ul style="list-style:none;">
+                    <li style="margin-bottom:10px;"><a href="/blog/is-pathhire-legit" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Is PathHire Legit?</a></li>
+                    <li style="margin-bottom:10px;"><a href="/blog/success-stories" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Success Stories</a></li>
+                    <li style="margin-bottom:10px;"><a href="/blog/top-remote-companies" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Top Remote Companies</a></li>
+                    <li style="margin-bottom:10px;"><a href="/blog/career-change-guide" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Career Change Guide</a></li>
+                    <li style="margin-bottom:10px;"><a href="/blog/entry-level-jobs" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Top Entry-Level Jobs</a></li>
+                    <li style="margin-bottom:10px;"><a href="/jobs?filter=remote100" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">100% Remote Roles</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#faf8f5;margin-bottom:16px;">Related Tools</h4>
+                <ul style="list-style:none;">
+                    <li style="margin-bottom:10px;"><a href="/tools/interview-prep" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">AI Interview Prep</a></li>
+                    <li style="margin-bottom:10px;"><a href="/tools/salary-benchmarker" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Salary Benchmarker</a></li>
+                    <li style="margin-bottom:10px;"><a href="/tools/linkedin-optimiser" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">LinkedIn Optimiser</a></li>
+                    <li style="margin-bottom:10px;"><a href="/applications" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Job Application Tracker</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#faf8f5;margin-bottom:16px;">Company</h4>
+                <ul style="list-style:none;">
+                    <li style="margin-bottom:10px;"><a href="/about" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">About Us</a></li>
+                    <li style="margin-bottom:10px;"><a href="/privacy" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Privacy Policy</a></li>
+                    <li style="margin-bottom:10px;"><a href="/terms" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Terms of Service</a></li>
+                    <li style="margin-bottom:10px;"><a href="/refund" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Refund Policy</a></li>
+                    <li style="margin-bottom:10px;"><a href="/contact" style="color:#8a8278;text-decoration:none;font-size:13px;" onmouseover="this.style.color='#e8764a'" onmouseout="this.style.color='#8a8278'">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div style="border-top:1px solid rgba(250,248,245,.06);padding-top:24px;display:flex;justify-content:space-between;color:#8a8278;font-size:12px;">
+            <p>&copy; 2026 PathHire. All rights reserved.</p>
+            <p>Built for the global remote workforce.</p>
+        </div>
+    </div>
+</footer>
+{% endmacro %}

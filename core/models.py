@@ -28,6 +28,17 @@ class User(db.Model, UserMixin):
     # ── tracks whether user has completed post-payment onboarding ───────────
     onboarding_complete = db.Column(db.Boolean, default=False)
 
+    # ── Job-search preferences (set during onboarding, editable on jobs page) ─
+    preferred_location  = db.Column(db.String(255), nullable=True)
+    work_type           = db.Column(db.String(255), nullable=True)   # JSON list or plain string
+    employment_type     = db.Column(db.String(255), nullable=True)   # JSON list or plain string
+    salary_min          = db.Column(db.Integer,     nullable=True)
+    salary_max          = db.Column(db.Integer,     nullable=True)
+    skills              = db.Column(db.Text,        nullable=True)   # JSON list or comma-sep
+
+    # ── Saved job IDs from the jobs board ────────────────────────────────────
+    saved_job_ids       = db.Column(db.JSON,        nullable=True)
+
     # ── ATS improvement — one attempt per resume upload ──────────────────────
     # Reset automatically when the user uploads a new resume (app.py handles this)
     ats_improved_text   = db.Column(db.Text,     nullable=True)   # AI-rewritten resume text

@@ -41,17 +41,18 @@
     border-radius: var(--r);
     padding: 22px;
     animation: fadein .4s ease both;
-    transition: box-shadow .2s, border-color .2s;
+    transition: box-shadow .2s, border-color .2s, transform .18s;
   }
   .pcard:hover {
-    border-color: rgba(217,82,21,.15);
-    box-shadow: 0 4px 20px rgba(12,11,10,.07);
+    border-color: rgba(217,82,21,.18);
+    box-shadow: 0 6px 28px rgba(12,11,10,.08);
+    transform: translateY(-1px);
   }
 
   .card-section-title {
-    font-size: 9.5px; font-weight: 700; letter-spacing: .12em;
+    font-size: 9px; font-weight: 700; letter-spacing: .14em;
     text-transform: uppercase; color: var(--fg3);
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     display: flex; align-items: center; gap: 8px;
   }
   .card-section-title::after {

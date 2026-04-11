@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us — PathHire</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--ink:#0f0e0d;--ink-3:#8a8278;--paper:#faf8f5;--accent:#c8511a;--accent-2:#e8764a;--sans:'DM Sans',sans-serif;}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        html,body{background:var(--ink);color:var(--paper);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
+        a{color:inherit;}
+        .page-wrap{max-width:760px;margin:0 auto;padding:64px 24px 100px;}
+        .eyebrow{font-size:12px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--accent-2);margin-bottom:14px;}
+        h1{font-family:'DM Serif Display',serif;font-size:clamp(28px,5vw,46px);line-height:1.1;letter-spacing:-.03em;margin-bottom:20px;}
+        h2{font-family:'DM Serif Display',serif;font-size:22px;line-height:1.2;margin:36px 0 12px;}
+        p{font-size:15px;color:rgba(250,248,245,.6);line-height:1.85;margin-bottom:14px;}
+        strong{color:var(--paper);}
+        .card{background:rgba(255,255,255,.04);border:1px solid rgba(250,248,245,.08);border-radius:14px;padding:28px;margin-bottom:20px;}
+        .accent-card{background:rgba(200,81,26,.06);border:1px solid rgba(200,81,26,.18);border-radius:14px;padding:28px;margin-bottom:20px;}
+        label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-bottom:8px;}
+        input,textarea,select{width:100%;padding:11px 14px;border:1px solid rgba(250,248,245,.1);border-radius:9px;font-size:14px;font-family:var(--sans);background:rgba(255,255,255,.04);color:var(--paper);outline:none;transition:border-color .2s;}
+        input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+        select option{background:#1a1814;color:var(--paper);}
+        .btn{display:inline-block;background:var(--accent);color:var(--paper);text-decoration:none;border:none;font-size:14px;font-weight:600;padding:12px 24px;border-radius:9px;cursor:pointer;font-family:var(--sans);}
+        .meta{font-size:13px;color:var(--ink-3);margin-bottom:40px;}
+        .back-link{font-size:13px;color:var(--accent-2);text-decoration:none;font-weight:500;display:inline-block;margin-bottom:28px;}
+    </style>
+</head>
+<body>
+{% from "_public_layout.html" import public_nav, public_footer %}
+{{ public_nav() }}
+<div class="page-wrap">
+    <p class="eyebrow">Our Story</p>
+    <h1>Built by job seekers,<br>for job seekers.</h1>
+    <p>PathHire was founded after one too many hours spent scrolling job boards, tailoring cover letters for roles that were never a real fit, and hearing nothing back. We knew there had to be a smarter way — so we built one.</p>
+    <p>PathHire uses AI to score your resume against thousands of live remote jobs, giving you a clear match percentage before you invest a single minute of your time applying.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:36px 0;">
+        <div class="card" style="text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--accent-2);margin-bottom:6px;">10K+</div>
+            <div style="font-size:12px;color:var(--ink-3);">Jobs scanned daily</div>
+        </div>
+        <div class="card" style="text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--accent-2);margin-bottom:6px;">3×</div>
+            <div style="font-size:12px;color:var(--ink-3);">More interviews vs cold applying</div>
+        </div>
+        <div class="card" style="text-align:center;">
+            <div style="font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--accent-2);margin-bottom:6px;">2 min</div>
+            <div style="font-size:12px;color:var(--ink-3);">Average time to first match</div>
+        </div>
+    </div>
+
+    <h2>Our Mission</h2>
+    <p>We believe the hiring process is broken. Job seekers waste hundreds of hours applying to roles they're not right for. PathHire fixes the mismatch by scoring every job against your actual profile before you ever see it.</p>
+
+    <h2>Our Values</h2>
+    <p><strong>Honesty over hype.</strong> We show you your real fit score — even when it's low. No false hope, no wasted applications.</p>
+    <p><strong>Your data is yours.</strong> We never sell your resume or personal information to recruiters or advertisers. Full stop.</p>
+    <p><strong>Built to save time.</strong> Every feature exists to reduce the hours spent job searching, not to add more steps.</p>
+
+    <div class="accent-card" style="margin-top:48px;">
+        <h2 style="margin-top:0;">Get in touch</h2>
+        <p style="margin-bottom:20px;">Have a question, partnership idea, or just want to say hello? We read every message.</p>
+        <a href="/contact" class="btn">Contact Us →</a>
+    </div>
+</div>
+{{ public_footer() }}
+</body>
+</html>

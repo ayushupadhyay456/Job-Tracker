@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}LinkedIn Optimiser — PathHire{% endblock %}
+{% block page_title %}LinkedIn Optimiser{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;margin:0 auto;padding:48px 0;">
+
+    <div style="margin-bottom:40px;">
+        <p style="font-size:12px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;">AI Tool</p>
+        <h1 style="font-size:clamp(28px,4vw,40px);font-weight:700;letter-spacing:-.03em;margin-bottom:14px;">LinkedIn Optimiser</h1>
+        <p style="font-size:15px;color:var(--fg2);line-height:1.7;">Paste your LinkedIn headline or summary and we'll rewrite it to attract more recruiters and rank higher in search results.</p>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:36px 32px;margin-bottom:24px;">
+        <form method="POST" action="/tools/linkedin-optimiser" style="display:flex;flex-direction:column;gap:20px;">
+            <div>
+                <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--fg2);margin-bottom:8px;">Target Role</label>
+                <input type="text" name="target_role" placeholder="e.g. Senior UX Designer" required
+                    style="width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--fg);outline:none;transition:border-color .2s;"
+                    onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--line)'">
+            </div>
+            <div>
+                <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--fg2);margin-bottom:8px;">Current Headline</label>
+                <input type="text" name="headline" placeholder="e.g. UX Designer at Acme"
+                    style="width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--fg);outline:none;transition:border-color .2s;"
+                    onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--line)'">
+            </div>
+            <div>
+                <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--fg2);margin-bottom:8px;">Current Summary (About section)</label>
+                <textarea name="summary" rows="6" placeholder="Paste your current LinkedIn summary here..."
+                    style="width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--fg);outline:none;resize:vertical;transition:border-color .2s;"
+                    onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--line)'"></textarea>
+            </div>
+            <button type="submit"
+                style="align-self:flex-start;background:var(--accent);color:#fff;border:none;padding:13px 28px;border-radius:9px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity .2s;"
+                onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                Optimise Profile →
+            </button>
+        </form>
+    </div>
+
+    {% if optimised %}
+    <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px 28px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <h3 style="font-size:14px;font-weight:700;">Optimised Headline</h3>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('hl-out').innerText)"
+                    style="background:var(--bg);border:1px solid var(--line);padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Copy</button>
+            </div>
+            <p id="hl-out" style="font-size:15px;color:var(--fg);font-weight:500;">{{ optimised.headline }}</p>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px 28px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <h3 style="font-size:14px;font-weight:700;">Optimised Summary</h3>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('sum-out').innerText)"
+                    style="background:var(--bg);border:1px solid var(--line);padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Copy</button>
+            </div>
+            <p id="sum-out" style="font-size:14px;color:var(--fg2);line-height:1.8;white-space:pre-wrap;">{{ optimised.summary }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview Prep — PathHire</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--ink:#0f0e0d;--ink-3:#8a8278;--paper:#faf8f5;--accent:#c8511a;--accent-2:#e8764a;--sans:'DM Sans',sans-serif;}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        html,body{background:var(--ink);color:var(--paper);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
+        a{color:inherit;}
+        .page-wrap{max-width:760px;margin:0 auto;padding:64px 24px 100px;}
+        .eyebrow{font-size:12px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--accent-2);margin-bottom:14px;}
+        h1{font-family:'DM Serif Display',serif;font-size:clamp(28px,5vw,46px);line-height:1.1;letter-spacing:-.03em;margin-bottom:20px;}
+        h2{font-family:'DM Serif Display',serif;font-size:22px;line-height:1.2;margin:36px 0 12px;}
+        p{font-size:15px;color:rgba(250,248,245,.6);line-height:1.85;margin-bottom:14px;}
+        strong{color:var(--paper);}
+        .card{background:rgba(255,255,255,.04);border:1px solid rgba(250,248,245,.08);border-radius:14px;padding:28px;margin-bottom:20px;}
+        .accent-card{background:rgba(200,81,26,.06);border:1px solid rgba(200,81,26,.18);border-radius:14px;padding:28px;margin-bottom:20px;}
+        label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-bottom:8px;}
+        input,textarea,select{width:100%;padding:11px 14px;border:1px solid rgba(250,248,245,.1);border-radius:9px;font-size:14px;font-family:var(--sans);background:rgba(255,255,255,.04);color:var(--paper);outline:none;transition:border-color .2s;}
+        input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+        select option{background:#1a1814;color:var(--paper);}
+        .btn{display:inline-block;background:var(--accent);color:var(--paper);text-decoration:none;border:none;font-size:14px;font-weight:600;padding:12px 24px;border-radius:9px;cursor:pointer;font-family:var(--sans);}
+        .meta{font-size:13px;color:var(--ink-3);margin-bottom:40px;}
+        .back-link{font-size:13px;color:var(--accent-2);text-decoration:none;font-weight:500;display:inline-block;margin-bottom:28px;}
+    </style>
+</head>
+<body>
+{% from "_public_layout.html" import public_nav, public_footer %}
+{{ public_nav() }}
+<div class="page-wrap">
+    <p class="eyebrow">AI Tool</p>
+    <h1>AI Interview Prep</h1>
+    <p>Generate role-specific interview questions and model answers based on the job description. Walk in prepared.</p>
+    <div class="card" style="margin-top:32px;">
+        <form method="POST" action="/tools/interview-prep" style="display:flex;flex-direction:column;gap:18px;">
+            <div><label>Job Title</label><input type="text" name="job_title" placeholder="e.g. Data Analyst" required></div>
+            <div><label>Job Description</label><textarea name="job_description" rows="6" placeholder="Paste the job description..." required></textarea></div>
+            <div><label>Question Type</label>
+                <select name="question_type">
+                    <option value="all">All types</option>
+                    <option value="behavioural">Behavioural (STAR)</option>
+                    <option value="technical">Technical</option>
+                    <option value="situational">Situational</option>
+                </select>
+            </div>
+            <button type="submit" class="btn" style="align-self:flex-start;">Generate Questions →</button>
+        </form>
+    </div>
+    {% if questions %}
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:20px;">
+        {% for q in questions %}
+        <div class="card">
+            <p style="font-weight:600;color:var(--paper);margin-bottom:10px;">Q{{ loop.index }}: {{ q.question }}</p>
+            <p style="border-top:1px solid rgba(250,248,245,.06);padding-top:10px;margin:0;"><strong style="color:var(--accent-2);">Tip:</strong> {{ q.tip }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{{ public_footer() }}
+</body>
+</html>

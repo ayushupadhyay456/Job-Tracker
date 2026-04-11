@@ -70,8 +70,8 @@ _cl_lock         = threading.Lock()
 CL_CACHE_TTL     = 3600   # 1 hour
 
 
-def _cl_cache_key(user_id: int, job_title: str, company: str) -> str:
-    raw = f"{user_id}:{job_title.lower().strip()}:{company.lower().strip()}"
+def _cl_cache_key(user_id: int, job_title: str, company: str, job_description: str = "") -> str:
+    raw = f"{user_id}:{job_title.lower().strip()}:{company.lower().strip()}:{job_description[:200]}"
     return hashlib.md5(raw.encode()).hexdigest()[:20]
 
 
@@ -532,6 +532,99 @@ def onboarding_complete():
 # JOBS  (paid users only)
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _flatten_field(val):
+    """Normalise a DB field that may be a Python list, JSON-encoded list, or plain string."""
+    import json as _json
+    if not val:
+        return ''
+    if isinstance(val, list):
+        return ', '.join(str(v) for v in val if v)
+    if isinstance(val, str):
+        try:
+            parsed = _json.loads(val)
+            if isinstance(parsed, list):
+                return ', '.join(str(v) for v in parsed if v)
+        except (ValueError, TypeError):
+            pass
+        return val
+    return str(val)
+
+
+def _build_plan_info(user):
+    """
+    Build the plan_info dict consumed by jobs.html.
+    Tries to import a helper from core.billing; falls back to a minimal
+    dict derived directly from the User model so the template always works.
+    """
+    try:
+        from core.billing import get_plan_info  # may not exist in all versions
+        return get_plan_info(user)
+    except Exception:
+        pass
+
+    import datetime
+    plan  = (user.plan or 'monthly').lower()
+    label_map = {
+        'monthly':  ('Monthly',  '#1849a9'),
+        'yearly':   ('Yearly',   '#0F6E56'),
+        'annual':   ('Annual',   '#0F6E56'),
+        'biannual': ('6-Month',  '#854F0B'),
+    }
+    label, colour = label_map.get(plan, ('Free', '#6c6560'))
+
+    days_left = None
+    ends_str  = None
+    if user.subscription_ends:
+        try:
+            end_dt    = user.subscription_ends if hasattr(user.subscription_ends, 'date') \
+                        else datetime.datetime.fromisoformat(str(user.subscription_ends))
+            delta     = (end_dt.date() - datetime.date.today()).days
+            days_left = max(delta, 0)
+            ends_str  = end_dt.strftime('%b %d, %Y')
+        except Exception:
+            pass
+
+    return {
+        'label':            label,
+        'colour':           colour,
+        'status':           user.subscription_status or 'inactive',
+        'score_limit':      '∞' if plan in ('yearly', 'annual') else '50',
+        'ends':             ends_str,
+        'days_left':        days_left,
+        'has_ats':          bool(user.ats_improved_text),
+        'ats_score_before': user.ats_original_score,
+        'ats_score_after':  user.ats_improved_score,
+    }
+
+@app.route('/about')
+def about(): return render_template('about.html')
+
+@app.route('/privacy')
+def privacy(): return render_template('privacy.html')
+
+@app.route('/refund')
+def refund(): return render_template('refund.html')
+
+@app.route('/contact', methods=['GET','POST'])
+def contact(): return render_template('contact.html', contact_sent=False)
+
+@app.route('/cover-letter', methods=['GET','POST'])
+def cover_letter(): return render_template('cover_letter.html')
+
+@app.route('/tools/interview-prep', methods=['GET','POST'])
+def interview_prep(): return render_template('interview_prep.html')
+
+@app.route('/tools/salary-benchmarker', methods=['GET','POST'])
+def salary_benchmarker(): return render_template('salary_benchmarker.html')
+
+@app.route('/tools/linkedin-optimiser', methods=['GET','POST'])
+def linkedin_optimiser(): return render_template('linkedin_optimiser.html')
+
+@app.route('/blog/is-pathhire-legit')
+def blog_legit(): return render_template('blog_is_pathhire_legit.html')
+
+@app.route('/blog/success-stories')
+def blog_success(): return render_template('blog_success_stories.html')
 @app.route('/jobs')
 @login_required
 def jobs():
@@ -542,17 +635,78 @@ def jobs():
     has_resume = bool(current_user.resume_text)
     role       = current_user.inferred_role or current_user.domain
 
+    # Build user_prefs for the preferences panel (always shown)
+    user_prefs = {
+        'role':               current_user.inferred_role or current_user.domain or '',
+        'experience_level':   current_user.experience_level or '',
+        'preferred_location': current_user.preferred_location or '',
+        'salary_min':         current_user.salary_min or '',
+        'salary_max':         current_user.salary_max or '',
+        'work_type':          _flatten_field(current_user.work_type),
+        'employment_type':    _flatten_field(current_user.employment_type),
+    }
+
+    # Build plan_info for the plan card
+    plan_info = _build_plan_info(current_user)
+
     if not has_resume or not role:
-        return render_template('jobs.html', jobs=[], has_resume=False)
+        return render_template('jobs.html', jobs=[], has_resume=False,
+                               user_prefs=user_prefs, skills_list=[],
+                               plan_info=plan_info)
 
     live_jobs = get_jobs_for_user(
         role        = role,
         resume_text = current_user.resume_text,
         top_n       = 20,
-        use_gemini  = False,  # Pure-python scoring = zero Gemini quota on /jobs page
-                              # Set True only if you have a paid Gemini API key
+        use_gemini  = False,
     )
-    return render_template('jobs.html', jobs=live_jobs, has_resume=True)
+
+    # Extract skills from resume for the skills panel
+    skills_list = []
+    try:
+        parsed_resume = parse_resume_sections(current_user.resume_text)
+        raw_skills    = parsed_resume.get('skills') or ''
+        if isinstance(raw_skills, list):
+            skills_list = [s.strip() for s in raw_skills if s.strip()]
+        elif isinstance(raw_skills, str):
+            skills_list = [s.strip() for s in re.split(r'[,\n•|/]', raw_skills) if s.strip()]
+    except Exception:
+        pass
+
+    return render_template('jobs.html', jobs=live_jobs, has_resume=True,
+                           user_prefs=user_prefs, skills_list=skills_list,
+                           plan_info=plan_info)
+
+
+@app.route('/jobs/update-prefs', methods=['POST'])
+@login_required
+def jobs_update_prefs():
+    """Update job-search preferences from the jobs dashboard."""
+    guard = _require_active_subscription()
+    if guard:
+        return jsonify({"ok": False, "error": "Subscription required"}), 403
+
+    data = request.get_json() or {}
+    if data.get('role'):
+        current_user.inferred_role = data['role'].strip()
+        current_user.domain        = data['role'].strip()
+    if data.get('experience_level'):
+        current_user.experience_level = data['experience_level'].strip()
+    if 'preferred_location' in data:
+        current_user.preferred_location = data['preferred_location'].strip()
+    if 'salary_min' in data:
+        try: current_user.salary_min = int(data['salary_min']) if data['salary_min'] else None
+        except (ValueError, TypeError): pass
+    if 'salary_max' in data:
+        try: current_user.salary_max = int(data['salary_max']) if data['salary_max'] else None
+        except (ValueError, TypeError): pass
+    if data.get('work_type'):
+        current_user.work_type = data['work_type']
+    if data.get('employment_type'):
+        current_user.employment_type = data['employment_type']
+
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 @app.route('/jobs/save', methods=['POST'])
@@ -596,7 +750,7 @@ def _generate_cover_letter(user, job_title: str, company: str, job_description: 
       - max_output_tokens 300 (was 400)
     """
     # ── Cache check ────────────────────────────────────────────────────────────
-    ck    = _cl_cache_key(user.id, job_title, company)
+    ck    = _cl_cache_key(user.id, job_title, company, job_description)
     entry = _cl_cache.get(ck)
     if entry and (time.time() - entry["ts"]) < CL_CACHE_TTL:
         return entry["text"]
@@ -606,12 +760,18 @@ def _generate_cover_letter(user, job_title: str, company: str, job_description: 
         try:
             from google.genai import types as gtypes
             prompt = (
-                f"Write a concise 3-paragraph (~130 word) professional cover letter. "
-                f"No filler phrases. Output ONLY the letter body.\n"
+                f"Write a concise 3-paragraph (~130 word) professional cover letter tailored SPECIFICALLY to this exact job.\n"
+                f"Rules:\n"
+                f"- Mention the SPECIFIC role title '{job_title}' and company '{company}' by name in paragraph 1\n"
+                f"- Reference at least 1-2 SPECIFIC requirements or technologies from the JD excerpt in paragraph 2\n"
+                f"- Draw from the candidate's ACTUAL experience in the resume in paragraph 2\n"
+                f"- Keep paragraph 3 as a brief, forward-looking closing\n"
+                f"- NO generic filler phrases like 'I am writing to express my interest'\n"
+                f"- Output ONLY the letter body, no salutation, no sign-off\n"
                 f"Candidate: {user.name or 'Applicant'}\n"
                 f"Role: {job_title} at {company}\n"
-                f"JD excerpt: {job_description[:500]}\n"
-                f"Resume excerpt: {(user.resume_text or '')[:1000]}"
+                f"JD excerpt: {job_description[:600]}\n"
+                f"Resume excerpt: {(user.resume_text or '')[:1200]}"
             )
             resp = _gemini_app_client.models.generate_content(
                 model    = "gemini-2.0-flash",
@@ -629,22 +789,29 @@ def _generate_cover_letter(user, job_title: str, company: str, job_description: 
             app.logger.warning(f"Cover letter generation failed: {e}")
 
     # ── Smart fallback template ────────────────────────────────────────────────
-    resume_snippet = (user.resume_text or "")[:500]
+    resume_snippet = (user.resume_text or "")[:600]
     skills_preview = ""
     m = re.search(r'skills?\W+(.{30,80})', resume_snippet, re.IGNORECASE)
     if m:
         skills_preview = m.group(1).split('\n')[0].strip()
 
+    jd_snippet = ""
+    if job_description:
+        jd_m = re.search(r'(?:require|seeking|looking for|must have|experience with)[^\n.]{10,60}', job_description, re.IGNORECASE)
+        if jd_m:
+            jd_snippet = jd_m.group(0).strip()
+
     text = (
-        f"Having followed {company}'s work closely, I was excited to see the {job_title} opening. "
-        f"My background aligns directly with what you're looking for"
-        + (f" — particularly my hands-on experience with {skills_preview}" if skills_preview else "")
+        f"The {job_title} role at {company} caught my attention immediately — "
+        f"it maps closely to the work I've been doing"
+        + (f", particularly around {skills_preview}" if skills_preview else "")
         + ".\n\n"
-        "Throughout my career I have delivered consistent results by combining technical depth with "
-        "strong cross-functional collaboration. I thrive in fast-paced environments and take pride "
-        "in writing clean, maintainable solutions to complex problems.\n\n"
+        + (f"Your focus on {jd_snippet} aligns directly with my experience. " if jd_snippet else "")
+        + "Throughout my career I have delivered consistent results by combining technical depth with "
+        "strong cross-functional collaboration. I take pride in writing clean, maintainable solutions "
+        "to complex problems and thrive in fast-paced, high-ownership environments.\n\n"
         f"I'd welcome the chance to bring this experience to {company} and contribute meaningfully "
-        "to your team's goals. Thank you for your time and consideration."
+        "to your team's goals. Thank you for considering my application."
     )
     with _cl_lock:
         _cl_cache[ck] = {"ts": time.time(), "text": text}
@@ -897,7 +1064,12 @@ def resume_improve():
         return jsonify({"ok": False, "error": "No resume uploaded"}), 400
 
     from flask import session as flask_session
-    from core.scorer import _client as gemini_client
+    gemini_client = _gemini_app_client
+    if not gemini_client:
+        try:
+            from core.scorer import _client as gemini_client
+        except Exception:
+            gemini_client = None
     from google.genai import types as gtypes
 
     if not gemini_client:
@@ -1196,6 +1368,50 @@ def profile_delete_account():
     db.session.commit()
     flash('Your account has been deleted.', 'success')
     return redirect(url_for('signup_view'))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STATIC / INFORMATIONAL PAGES
+# These were missing — links in landing.html returned 404.
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+
+@app.route('/privacy')
+def privacy():
+    # Try privacy.html first, fall back to terms.html if separate page not yet created
+    import os as _os
+    tpl_path = _os.path.join(app.template_folder or 'templates', 'privacy.html')
+    if _os.path.exists(tpl_path):
+        return render_template('privacy.html')
+    return render_template('terms.html')
+
+
+@app.route('/contact')
+def contact():
+    import os as _os
+    tpl_path = _os.path.join(app.template_folder or 'templates', 'contact.html')
+    if _os.path.exists(tpl_path):
+        return render_template('contact.html')
+    # Fallback: redirect to landing with a mailto anchor
+    return redirect('/#contact')
+
+
+@app.route('/blog')
+def blog():
+    import os as _os
+    tpl_path = _os.path.join(app.template_folder or 'templates', 'blog.html')
+    if _os.path.exists(tpl_path):
+        return render_template('blog.html')
+    return redirect('/')
 
 
 # ─────────────────────────────────────────────────────────────────────────────

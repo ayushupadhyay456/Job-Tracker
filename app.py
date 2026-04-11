@@ -290,9 +290,10 @@ def upload_pfp():
         flash('Please upload a valid image (PNG, JPG, GIF, WEBP).', 'error')
         return redirect(request.referrer or url_for('jobs'))
 
-    os.makedirs('static/uploads', exist_ok=True)
+    upload_dir = '/tmp/uploads' if os.getenv('VERCEL') else 'static/uploads'
+    os.makedirs(upload_dir, exist_ok=True)
     filename = secure_filename(f"pfp_{current_user.id}.{ext}")
-    file.save(os.path.join('static/uploads', filename))
+    file.save(os.path.join(upload_dir, filename))
     current_user.profile_pic = f'/static/uploads/{filename}'
     db.session.commit()
     return redirect(request.referrer or url_for('jobs'))
@@ -596,35 +597,6 @@ def _build_plan_info(user):
         'ats_score_after':  user.ats_improved_score,
     }
 
-@app.route('/about')
-def about(): return render_template('about.html')
-
-@app.route('/privacy')
-def privacy(): return render_template('privacy.html')
-
-@app.route('/refund')
-def refund(): return render_template('refund.html')
-
-@app.route('/contact', methods=['GET','POST'])
-def contact(): return render_template('contact.html', contact_sent=False)
-
-@app.route('/cover-letter', methods=['GET','POST'])
-def cover_letter(): return render_template('cover_letter.html')
-
-@app.route('/tools/interview-prep', methods=['GET','POST'])
-def interview_prep(): return render_template('interview_prep.html')
-
-@app.route('/tools/salary-benchmarker', methods=['GET','POST'])
-def salary_benchmarker(): return render_template('salary_benchmarker.html')
-
-@app.route('/tools/linkedin-optimiser', methods=['GET','POST'])
-def linkedin_optimiser(): return render_template('linkedin_optimiser.html')
-
-@app.route('/blog/is-pathhire-legit')
-def blog_legit(): return render_template('blog_is_pathhire_legit.html')
-
-@app.route('/blog/success-stories')
-def blog_success(): return render_template('blog_success_stories.html')
 @app.route('/jobs')
 @login_required
 def jobs():
@@ -1371,8 +1343,7 @@ def profile_delete_account():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# STATIC / INFORMATIONAL PAGES
-# These were missing — links in landing.html returned 404.
+# PUBLIC STATIC / INFORMATIONAL PAGES  (no login required)
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/about')
@@ -1387,31 +1358,67 @@ def terms():
 
 @app.route('/privacy')
 def privacy():
-    # Try privacy.html first, fall back to terms.html if separate page not yet created
-    import os as _os
-    tpl_path = _os.path.join(app.template_folder or 'templates', 'privacy.html')
-    if _os.path.exists(tpl_path):
-        return render_template('privacy.html')
-    return render_template('terms.html')
+    return render_template('privacy.html')
 
 
-@app.route('/contact')
+@app.route('/refund')
+def refund():
+    return render_template('refund.html')
+
+
+@app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    import os as _os
-    tpl_path = _os.path.join(app.template_folder or 'templates', 'contact.html')
-    if _os.path.exists(tpl_path):
-        return render_template('contact.html')
-    # Fallback: redirect to landing with a mailto anchor
-    return redirect('/#contact')
+    return render_template('contact.html', contact_sent=False)
 
 
 @app.route('/blog')
 def blog():
-    import os as _os
-    tpl_path = _os.path.join(app.template_folder or 'templates', 'blog.html')
-    if _os.path.exists(tpl_path):
-        return render_template('blog.html')
     return redirect('/')
+
+
+@app.route('/blog/is-pathhire-legit')
+def blog_legit():
+    return render_template('blog_is_pathhire_legit.html')
+
+
+@app.route('/blog/success-stories')
+def blog_success():
+    return render_template('blog_success_stories.html')
+
+
+@app.route('/blog/top-remote-companies')
+def blog_remote_companies():
+    return render_template('blog_success_stories.html')   # placeholder
+
+
+@app.route('/blog/career-change-guide')
+def blog_career_change():
+    return render_template('blog_is_pathhire_legit.html')  # placeholder
+
+
+@app.route('/blog/entry-level-jobs')
+def blog_entry_level():
+    return render_template('blog_success_stories.html')   # placeholder
+
+
+@app.route('/cover-letter', methods=['GET', 'POST'])
+def cover_letter():
+    return render_template('cover_letter.html')
+
+
+@app.route('/tools/interview-prep', methods=['GET', 'POST'])
+def interview_prep():
+    return render_template('interview_prep.html')
+
+
+@app.route('/tools/salary-benchmarker', methods=['GET', 'POST'])
+def salary_benchmarker():
+    return render_template('salary_benchmarker.html')
+
+
+@app.route('/tools/linkedin-optimiser', methods=['GET', 'POST'])
+def linkedin_optimiser():
+    return render_template('linkedin_optimiser.html')
 
 
 # ─────────────────────────────────────────────────────────────────────────────

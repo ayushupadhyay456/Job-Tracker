@@ -404,6 +404,8 @@ def _fetch_himalayas(query: str = "Software Engineer") -> list:
             return []
 
         query_tokens = set(_tokenize(query))
+        # Require meaningful tokens only (strip very short ones like "ml")
+        meaningful_query = {t for t in query_tokens if len(t) > 2}
         jobs = []
         for j in r.json().get("jobs", []):
             title_tokens = set(_tokenize(j.get("title", "")))
@@ -411,9 +413,20 @@ def _fetch_himalayas(query: str = "Software Engineer") -> list:
                 j.get("category", []) + j.get("parentCategories", [])
             )
             cat_tokens = set(_tokenize(cats))
-            # Only keep jobs whose title or category overlaps with the role query
-            if not (query_tokens & title_tokens) and not (query_tokens & cat_tokens):
-                continue
+            desc_tokens = set(_tokenize((j.get("description") or j.get("excerpt", ""))[:500]))
+
+            # Accept job if title OR category has meaningful overlap with the role query.
+            # Description tokens are used only as a last resort (weaker signal).
+            title_overlap = meaningful_query & title_tokens
+            cat_overlap   = meaningful_query & cat_tokens
+            desc_overlap  = meaningful_query & desc_tokens
+
+            # Require at least 1 meaningful token match in title/category.
+            # Description alone is not enough — avoids vague catch-alls.
+            if not title_overlap and not cat_overlap:
+                # Last chance: description must have ≥2 overlapping tokens
+                if len(desc_overlap) < 2:
+                    continue
 
             sal = None
             if j.get("minSalary"):
@@ -523,21 +536,70 @@ _FETCHERS = {
 }
 
 
+def _role_title_is_relevant(job_title: str, role: str) -> bool:
+    """
+    Hard gate: returns True only if the job title is plausibly related to the
+    inferred role.  Uses a two-pass strategy:
+
+    Pass 1 — exact role-family match via a small whitelist so that e.g.
+             "Senior Backend Developer" passes for role "Backend Developer".
+    Pass 2 — at least one *significant* word (>3 chars) from the role query
+             appears somewhere in the job title.
+
+    A job that fails both passes is discarded before it ever reaches scoring,
+    eliminating "Head of Private Trips", "Sales Associate", etc.
+    """
+    title_lower = job_title.lower().strip()
+    role_lower  = role.lower().strip()
+
+    # --- Pass 1: role-family keyword families ---
+    # Map every known role to a small set of title keywords that are acceptable.
+    ROLE_TITLE_FAMILIES: dict[str, list[str]] = {
+        "machine learning engineer": ["machine learning", "ml engineer", "mlops", "ai engineer"],
+        "data scientist":            ["data scientist", "data science", "ml", "machine learning"],
+        "data analyst":              ["data analyst", "analytics", "business analyst", "bi analyst"],
+        "devops engineer":           ["devops", "sre", "site reliability", "platform engineer", "infrastructure"],
+        "backend developer":         ["backend", "back-end", "back end", "server", "api developer", "software engineer", "software developer"],
+        "frontend developer":        ["frontend", "front-end", "front end", "ui developer", "react developer", "vue developer"],
+        "full stack developer":      ["full stack", "fullstack", "full-stack", "software engineer", "software developer"],
+        "mobile developer":          ["mobile", "android", "ios", "flutter", "react native"],
+        "security engineer":         ["security", "cybersecurity", "appsec", "infosec", "penetration"],
+        "cloud engineer":            ["cloud", "aws", "gcp", "azure", "infrastructure", "devops"],
+        "product manager":           ["product manager", "product management", "product owner", "program manager"],
+        "ux designer":               ["ux", "ui/ux", "product designer", "interaction designer", "user experience"],
+        "software engineer":         ["software engineer", "software developer", "sde", "swe", "backend", "frontend",
+                                      "full stack", "fullstack", "platform engineer", "application developer"],
+    }
+    families = ROLE_TITLE_FAMILIES.get(role_lower)
+    if families:
+        if any(kw in title_lower for kw in families):
+            return True
+        # Role is known but title matches nothing in the family → reject.
+        # (Pass 2 below won't rescue it — a "Travel Manager" shouldn't match
+        #  "Product Manager" just because both contain "manager".)
+        return False
+
+    # --- Pass 2: fallback for unrecognised / custom roles ---
+    # Accept if at least one meaningful word from the role appears in the title.
+    significant = {w for w in role_lower.split() if len(w) > 3}
+    return bool(significant & set(title_lower.split()))
+
+
 def _fetch_all_jobs(role: str) -> list:
     """
-    Fetch from all 6 sources IN PARALLEL, then dedup by (title, company).
-    Cached per role for JOB_CACHE_TTL — 1000 users, same role = 1 fetch.
+    Fetch from all 6 sources IN PARALLEL, dedup by (title, company),
+    then apply a hard role-relevance title filter.
+
+    Cached per role for JOB_CACHE_TTL — 1000 users same role → 1 fetch.
     """
     cached = _cache_get(_job_cache, role, JOB_CACHE_TTL)
     if cached is not None:
         print(f"📦 Job cache hit for '{role}' ({len(cached)} jobs)")
         return [j.copy() for j in cached]
 
-    print(
-        f"\n🔍 Fetching '{role}' from {len(_FETCHERS)} sources in parallel…"
-    )
+    print(f"\n🔍 Fetching '{role}' from {len(_FETCHERS)} sources in parallel…")
     t0       = time.time()
-    all_jobs = []
+    all_jobs: list = []
 
     with ThreadPoolExecutor(max_workers=6) as pool:
         futures = {
@@ -551,8 +613,9 @@ def _fetch_all_jobs(role: str) -> list:
             except Exception as e:
                 print(f"  [{name}] ❌ thread error: {e}")
 
-    # Dedup: normalise title + company as key
-    seen, unique = set(), []
+    # ── Step 1: dedup by normalised (title, company) ──────────────────────────
+    seen:   set  = set()
+    unique: list = []
     for j in all_jobs:
         key = (
             re.sub(r"\s+", " ", j["title"].lower().strip()),
@@ -561,6 +624,16 @@ def _fetch_all_jobs(role: str) -> list:
         if key not in seen:
             seen.add(key)
             unique.append(j)
+
+    # ── Step 2: hard role-relevance filter on job title ───────────────────────
+    # This is the primary fix: eliminate irrelevant jobs (e.g. "Head of Private
+    # Trips") *before* they enter the scored result set.
+    before_filter = len(unique)
+    unique = [j for j in unique if _role_title_is_relevant(j["title"], role)]
+    print(
+        f"  🎯 Role filter: kept {len(unique)}/{before_filter} "
+        f"(dropped {before_filter - len(unique)} irrelevant titles)"
+    )
 
     print(
         f"✅ {len(unique)} unique / {len(all_jobs)} total "
@@ -668,6 +741,7 @@ def get_jobs_for_user(
     if not jobs:
         return []
 
+    # Cap BEFORE scoring so Gemini token budget isn't wasted on excess jobs.
     jobs = jobs[:top_n]
 
     if resume_text and use_gemini and _gemini_client:
@@ -693,6 +767,16 @@ def get_jobs_for_user(
             )
 
     jobs.sort(key=lambda j: j["match_score"], reverse=True)
+
+    # Drop any job whose match_score is 0 — these were killed by the industry
+    # shield in scorer.py (e.g. "Head of Private Trips") and should never
+    # appear in the user-facing results list.
+    jobs = [j for j in jobs if j["match_score"] > 0]
+
+    if not jobs:
+        print("⚠️  All jobs scored 0 — returning empty list (role mismatch likely)")
+        return []
+
     print(
         f"✅ Returning {len(jobs)} jobs | "
         f"top score: {jobs[0]['match_score']}%"

@@ -15,6 +15,9 @@ KEY OPTIMISATIONS vs original:
 import os, json, re, math, hashlib, time, threading
 from collections import Counter
 
+TECH_ANCHORS = {"engineer", "developer", "backend", "frontend", "fullstack", "software", "programmer", "sde"}
+NON_TECH_SIGNALS = ["trips", "tourism", "hotel", "travel agent", "hospitality", "cabin crew", "warehouse", "sales associate"]
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 _client = None
@@ -32,9 +35,9 @@ if GEMINI_API_KEY:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _cache_lock   = threading.Lock()
-_ats_cache:  dict = {}   # resume_hash → {ts, data}
+_ats_cache:  dict = {}   # resume_hash → data  (permanent — invalidated only when resume changes)
 _fit_cache:  dict = {}   # resume_hash+jd_hash → {ts, data}
-ATS_TTL = 3600           # 1 hour — resume doesn't change often
+ATS_TTL = 86400 * 30     # 30 days — effectively permanent within a session
 FIT_TTL = 1800           # 30 min
 
 def _h(text: str) -> str:
@@ -87,22 +90,15 @@ def _cos(a: dict, b: dict) -> float:
 
 # OPTIMISED: ~300 fewer tokens than original (rubric condensed, field hints removed)
 _ATS_PROMPT = """\
-You are a senior ATS specialist. Evaluate this resume strictly.
-Most resumes score 40-75. Only exceptional resumes score above 85.
-Return ONLY valid JSON, no markdown:
-
-{{"overall":<0-100>,"technical_skills":<0-100>,"experience":<0-100>,
-"keywords":<0-100>,"formatting":<0-100>,
-"missing_keywords":[<up to 5 missing skills for this role>],
-"bullet_point_fix":"<rewrite one weak bullet with numbers>",
-"summary":"<2 actionable sentences on what to improve>",
-"missing_details":[{{"category":"<Contact Info|Professional Summary|Quantified Achievements|Keywords|Skills Section|Education|Certifications|LinkedIn/GitHub|Action Verbs|Formatting>","severity":"<critical|high|medium>","title":"<6 words max>","description":"<2 sentences: what's missing and how to fix>"}}]}}
-
-Penalise heavily: no numbers/metrics (−20), no contact info (−15), no summary (−10), paragraph blocks (−15), no skills section (−10).
-Provide 4-6 items in missing_details.
-Target role: {role}
-RESUME:
-{resume}"""
+ATS expert. Score resume. Return ONLY JSON, no markdown.
+Scores 0-100. Most resumes: 60-85. Penalise only truly missing essentials.
+{{"overall":N,"technical_skills":N,"experience":N,"keywords":N,"formatting":N,
+"missing_keywords":["skill1","skill2","skill3"],
+"bullet_point_fix":"<one improved bullet with a number>",
+"summary":"<1-2 sentences on top improvement>",
+"missing_details":[{{"category":"<Contact Info|Summary|Achievements|Keywords|Skills|Education|Certifications|Formatting>","severity":"<critical|high|medium>","title":"<5 words>","description":"<1 sentence fix>"}}]}}
+Role:{role}
+RESUME:{resume}"""
 
 def _fallback_ats_score(resume_text: str, role: str) -> dict:
     """Heuristic ATS quality score — no API needed."""
@@ -149,6 +145,9 @@ def _fallback_ats_score(resume_text: str, role: str) -> dict:
                    (10 if has_phone else 0) + (15 if reasonable_len else 0) + (10 if has_dates else 0))
 
     overall = int(tech_score * 0.30 + exp_score * 0.30 + kw_score * 0.20 + fmt_score * 0.20)
+    # Apply a floor so scores don't feel discouraging — min 52 for any resume that
+    # reached this function (i.e. it has actual text content worth analysing).
+    overall = max(52, min(overall + 12, 100))
 
     ROLE_KW_MAP = {
         "software": ["system design","rest api","microservices","unit testing","code review"],
@@ -238,14 +237,14 @@ def score_resume_ats(resume_text: str, role: str = "") -> dict:
             from google.genai import types as gtypes
             prompt = _ATS_PROMPT.format(
                 role   = role or "general professional",
-                resume = resume_text[:3000],   # was 4500 — saves ~375 tokens/call
+                resume = resume_text[:2000],   # 2000 chars is enough for scoring
             )
             resp = _client.models.generate_content(
                 model    = "gemini-2.0-flash",
                 contents = prompt,
                 config   = gtypes.GenerateContentConfig(
                     response_mime_type = "application/json",
-                    max_output_tokens  = 900,   # was 1200
+                    max_output_tokens  = 500,   # scores + short strings only
                     temperature        = 0.1,
                 ),
             )
@@ -290,16 +289,87 @@ def score_resume_ats(resume_text: str, role: str = "") -> dict:
 # 2. JOB-MATCH SCORE  (pure python, no API)
 # ─────────────────────────────────────────────────────────────────────────────
 
+# core/scorer.py
+
+import re
+
+# Expanded dictionaries for better role isolation
+TECH_STACK_KEYWORDS = {
+    "languages": ["python", "javascript", "typescript", "java", "golang", "rust", "c++", "c#"],
+    "backend": ["flask", "django", "fastapi", "node.js", "express", "microservices", "rest api"],
+    "infrastructure": ["docker", "kubernetes", "aws", "gcp", "azure", "terraform", "ci/cd", "nginx"],
+    "databases": ["postgresql", "mysql", "mongodb", "redis", "sqlalchemy", "prisma", "sql"]
+}
+
+# HARD NEGATIVES: If these appear in a job title or description without tech anchors, we kill the score.
+NON_TECH_SIGNALS = {
+    "hospitality_travel": ["trips", "tourism", "hotel", "travel agent", "hospitality", "cabin crew", "tourist"],
+    "manual_ops": ["warehouse", "driver", "cleaning", "maintenance", "security guard", "delivery"],
+    "sales_admin": ["sales associate", "customer service", "receptionist", "payroll", "accountant"]
+}
+
+# TECH ANCHORS: Mandatory words for a job to even be considered "Software Engineering"
+TECH_ANCHORS = {"engineer", "developer", "backend", "frontend", "fullstack", "software", "programmer", "sde"}
+
 def score_resume_against_job(resume_text: str, job_text: str) -> int:
+    """
+    Advanced scorer that weights technical overlap and penalizes irrelevant roles.
+    Optimized for high-volume Python/Flask engineering roles.
+    """
     if not resume_text or not job_text:
         return 0
-    try:
-        sim = _cos(_tf(_tok(resume_text[:3000])), _tf(_tok(job_text[:1000])))
-        return int(min(100, sim * 220))
-    except Exception:
-        return 0
 
+    res_lower = resume_text.lower()
+    job_lower = job_text.lower()
+    
+    # 1. INDUSTRY SHIELD (Hard Penalty)
+    # If the job is saturated with non-tech signals, force a 0% match.
+    non_tech_count = 0
+    for category, signals in NON_TECH_SIGNALS.items():
+        for signal in signals:
+            if f" {signal} " in f" {job_lower} ":
+                non_tech_count += 1
+    
+    # Also check if the job title contains NO tech anchors
+    has_tech_anchor = any(anchor in job_lower.split()[:10] for anchor in TECH_ANCHORS)
+    
+    if non_tech_count >= 2 and not has_tech_anchor:
+        return 0 # Kill role mismatch immediately (e.g., Head of Private Trips)
 
+    score = 0
+    
+    # 2. HARD TECH MATCHING (50% of weight)
+    # Rewards intersection of your actual tech stack (Python, Flask, Docker).
+    tech_points = 0
+    for category, skills in TECH_STACK_KEYWORDS.items():
+        for skill in skills:
+            if skill in job_lower and skill in res_lower:
+                tech_points += 10 # High reward for matching tech requirements
+    
+    score += min(50, tech_points)
+
+    # 3. CONTEXTUAL OVERLAP (30% of weight)
+    # Standard TF-IDF/Cosine Similarity for general context.
+    base_sim = _cos(_tf(_tok(res_lower[:3000])), _tf(_tok(job_lower[:1000])))
+    score += int(base_sim * 30)
+
+    # 4. ACTION VERB BOOST (10% of weight)
+    # Prioritizes engineering-heavy descriptions.
+    impact_verbs = ["optimized", "scaled", "architected", "implemented", "deployed", "integrated"]
+    impact_points = sum(2 for v in impact_verbs if v in res_lower and v in job_lower)
+    score += min(10, impact_points)
+
+    # 5. NORMALIZATION
+    # We apply a base floor for relevant-looking roles (45%) to keep ranking meaningful.
+    # Irrelevant roles were already caught by Step 1.
+    if score > 15:
+        final_score = int(45 + (score / 90) * 50)
+    else:
+        final_score = score
+
+    return min(95, final_score)
+
+ 
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. JOB-SPECIFIC DEEP ANALYSIS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -337,8 +407,8 @@ def analyze_job_fit(resume_text: str, job_description: str) -> dict:
         return result
 
     prompt = _JOB_FIT_PROMPT.format(
-        resume = resume_text[:3000],       # was 4000
-        jd     = job_description[:1500],   # was 2000
+        resume = resume_text[:1500],
+        jd     = job_description[:800],
     )
     try:
         from google.genai import types as gtypes
@@ -347,7 +417,7 @@ def analyze_job_fit(resume_text: str, job_description: str) -> dict:
             contents = prompt,
             config   = gtypes.GenerateContentConfig(
                 response_mime_type = "application/json",
-                max_output_tokens  = 400,   # unchanged — already tight
+                max_output_tokens  = 250,
                 temperature        = 0.1,
             ),
         )

@@ -605,11 +605,25 @@ def jobs():
         return guard
 
     has_resume = bool(current_user.resume_text)
-    role       = current_user.inferred_role or current_user.domain
+
+    # ── Role guard: always derive role from the resume itself so sales/biz roles
+    #    never pollute results for a software engineer.
+    #    We trust inferred_role (set at upload time) over the free-text domain field.
+    _ALLOWED_TECH_ROLES = {
+        "Software Engineer", "Backend Developer", "Frontend Developer",
+        "Full Stack Developer", "Mobile Developer", "Data Scientist",
+        "Data Analyst", "Machine Learning Engineer", "DevOps Engineer",
+        "Cloud Engineer", "Security Engineer", "Product Manager", "UX Designer",
+    }
+    raw_role = current_user.inferred_role or current_user.domain or ""
+    # If stored role isn't in our allow-list, re-infer from the resume text
+    if raw_role not in _ALLOWED_TECH_ROLES and current_user.resume_text:
+        raw_role = infer_role_from_resume(current_user.resume_text)
+    role = raw_role or None
 
     # Build user_prefs for the preferences panel (always shown)
     user_prefs = {
-        'role':               current_user.inferred_role or current_user.domain or '',
+        'role':               role or '',
         'experience_level':   current_user.experience_level or '',
         'preferred_location': current_user.preferred_location or '',
         'salary_min':         current_user.salary_min or '',
@@ -629,7 +643,7 @@ def jobs():
     live_jobs = get_jobs_for_user(
         role        = role,
         resume_text = current_user.resume_text,
-        top_n       = 20,
+        top_n       = 10,   # 10 fresh daily matches
         use_gemini  = False,
     )
 
@@ -644,6 +658,15 @@ def jobs():
             skills_list = [s.strip() for s in re.split(r'[,\n•|/]', raw_skills) if s.strip()]
     except Exception:
         pass
+
+    # Ensure salary is numeric so Jinja2 {:,.0f} formatting works
+    for job in live_jobs:
+        raw = job.get('salary')
+        if raw is not None:
+            try:
+                job['salary'] = float(raw)
+            except (ValueError, TypeError):
+                job['salary'] = None
 
     return render_template('jobs.html', jobs=live_jobs, has_resume=True,
                            user_prefs=user_prefs, skills_list=skills_list,
@@ -732,24 +755,18 @@ def _generate_cover_letter(user, job_title: str, company: str, job_description: 
         try:
             from google.genai import types as gtypes
             prompt = (
-                f"Write a concise 3-paragraph (~130 word) professional cover letter tailored SPECIFICALLY to this exact job.\n"
-                f"Rules:\n"
-                f"- Mention the SPECIFIC role title '{job_title}' and company '{company}' by name in paragraph 1\n"
-                f"- Reference at least 1-2 SPECIFIC requirements or technologies from the JD excerpt in paragraph 2\n"
-                f"- Draw from the candidate's ACTUAL experience in the resume in paragraph 2\n"
-                f"- Keep paragraph 3 as a brief, forward-looking closing\n"
-                f"- NO generic filler phrases like 'I am writing to express my interest'\n"
-                f"- Output ONLY the letter body, no salutation, no sign-off\n"
-                f"Candidate: {user.name or 'Applicant'}\n"
+                f"Write a concise 3-paragraph (~120 word) cover letter.\n"
                 f"Role: {job_title} at {company}\n"
-                f"JD excerpt: {job_description[:600]}\n"
-                f"Resume excerpt: {(user.resume_text or '')[:1200]}"
+                f"Rules: mention role+company in para 1; reference 1-2 JD requirements in para 2; "
+                f"brief forward-looking close in para 3. No generic filler. Output body only, no salutation/sign-off.\n"
+                f"JD: {job_description[:300]}\n"
+                f"Resume: {(user.resume_text or '')[:600]}"
             )
             resp = _gemini_app_client.models.generate_content(
                 model    = "gemini-2.0-flash",
                 contents = prompt,
                 config   = gtypes.GenerateContentConfig(
-                    max_output_tokens = 300,
+                    max_output_tokens = 220,
                     temperature       = 0.4,
                 ),
             )
@@ -1035,54 +1052,57 @@ def resume_improve():
     if not current_user.resume_text:
         return jsonify({"ok": False, "error": "No resume uploaded"}), 400
 
-    from flask import session as flask_session
     gemini_client = _gemini_app_client
     if not gemini_client:
         try:
-            from core.scorer import _client as gemini_client
+            from core.scorer import _client as _scorer_client
+            gemini_client = _scorer_client
         except Exception:
             gemini_client = None
-    from google.genai import types as gtypes
 
     if not gemini_client:
         return jsonify({"ok": False, "error": "AI service not available. Please contact support."}), 503
 
-    IMPROVE_PROMPT = """You are a professional resume writer and ATS optimisation expert.
-
-Rewrite and improve the following resume to maximise ATS scores:
-1. Add strong action verbs to every bullet point (Led, Built, Reduced, Delivered, Scaled, etc.)
-2. Quantify achievements where possible — use realistic estimates if needed and mark them with * to indicate estimated
-3. Add a professional 3-line summary at the top if one is missing
-4. Ensure all standard sections have clear headers in UPPERCASE (EXPERIENCE, EDUCATION, SKILLS, PROJECTS, CERTIFICATIONS)
-5. Improve keyword density relevant to the target role
-6. Keep all factual information accurate — do NOT invent job titles, companies, or dates
-7. Use • for bullet points
-8. Keep the same overall structure and length as the original
-
-Target role: {role}
-
-Return ONLY the improved resume text. No commentary, no markdown code fences, no explanations.
-
-ORIGINAL RESUME:
-{resume}
-"""
+    IMPROVE_PROMPT = (
+        "Rewrite this resume to maximise ATS score for role: {role}\n"
+        "Rules: strong action verbs on every bullet; quantify with * for estimates; "
+        "UPPERCASE section headers; add 2-line summary if missing; keep all facts accurate; use • bullets.\n"
+        "Return ONLY the improved resume text, no commentary.\n\nRESUME:\n{resume}"
+    )
 
     try:
+        from google.genai import types as gtypes
+
         prompt = IMPROVE_PROMPT.format(
             role   = current_user.inferred_role or "Software Engineer",
-            resume = current_user.resume_text[:4500],
+            resume = current_user.resume_text[:1800],
         )
         resp = gemini_client.models.generate_content(
             model    = "gemini-2.0-flash",
             contents = prompt,
             config   = gtypes.GenerateContentConfig(
-                max_output_tokens = 2000,
+                max_output_tokens = 900,
                 temperature       = 0.3,
             ),
         )
         improved_text = resp.text.strip()
-        flask_session['improved_resume'] = improved_text
+
+        current_user.ats_improved_text = improved_text
+        db.session.commit()
+
         return jsonify({"ok": True, "download_url": "/resume/download-improved"})
+
+    except Exception as e:
+        err_str = str(e)
+        app.logger.error(f"Resume improve error: {err_str}")
+        # Show a friendly message for quota errors instead of the raw API dump
+        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+            msg = "Daily AI quota reached. Please try again tomorrow, or contact support to upgrade your API plan."
+        elif "API_KEY" in err_str or "authentication" in err_str.lower():
+            msg = "AI service configuration error. Please contact support."
+        else:
+            msg = "Resume improvement failed. Please try again in a few minutes."
+        return jsonify({"ok": False, "error": msg}), 500
 
     except Exception as e:
         app.logger.error(f"Resume improve error: {e}")
@@ -1096,8 +1116,9 @@ def resume_download_improved():
     if guard:
         return redirect(url_for('resume'))
 
-    from flask import session as flask_session, make_response
-    improved_text = flask_session.get('improved_resume')
+    from flask import make_response
+    # Read from DB — cookie session cannot hold resume-sized text (>4KB limit)
+    improved_text = current_user.ats_improved_text
     if not improved_text:
         flash('No improved resume found. Please generate one first.', 'error')
         return redirect(url_for('resume'))
@@ -1276,7 +1297,30 @@ def profile():
     guard = _require_active_subscription()
     if guard:
         return guard
-    return render_template('profile.html')
+
+    user_prefs = {
+        'role':               current_user.inferred_role or current_user.domain or '',
+        'experience_level':   current_user.experience_level or '',
+        'preferred_location': current_user.preferred_location or '',
+        'salary_min':         current_user.salary_min or '',
+        'salary_max':         current_user.salary_max or '',
+        'work_type':          _flatten_field(current_user.work_type),
+        'employment_type':    _flatten_field(current_user.employment_type),
+    }
+
+    skills_list = []
+    if current_user.resume_text:
+        try:
+            parsed_resume = parse_resume_sections(current_user.resume_text)
+            raw_skills    = parsed_resume.get('skills') or []
+            if isinstance(raw_skills, list):
+                skills_list = [s.strip() for s in raw_skills if s.strip()]
+            elif isinstance(raw_skills, str):
+                skills_list = [s.strip() for s in re.split(r'[,\n•|/]', raw_skills) if s.strip()]
+        except Exception:
+            pass
+
+    return render_template('profile.html', user_prefs=user_prefs, skills_list=skills_list)
 
 
 @app.route('/profile/update', methods=['POST'])

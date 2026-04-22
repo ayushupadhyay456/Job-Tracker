@@ -512,6 +512,131 @@
   <!-- ════════════════ RIGHT COLUMN ════════════════ -->
   <div class="profile-right">
 
+    <!-- ── Job Preferences ── -->
+    <div class="pcard" style="animation-delay:.01s;">
+      <div class="card-section-title" style="display:flex;align-items:center;">
+        Job Preferences
+        <button onclick="togglePrefsEdit()" id="prefsEditBtn"
+          style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;
+                 padding:5px 12px;border-radius:7px;border:1px solid var(--line);
+                 background:var(--bg);font-family:'Geist',sans-serif;font-size:11.5px;
+                 font-weight:600;color:var(--fg2);cursor:pointer;transition:all .14s;">
+          <svg viewBox="0 0 12 12" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;"><path d="M9 1l2 2-7 7H2V8z"/></svg>
+          Edit
+        </button>
+      </div>
+
+      <!-- Read-only view -->
+      <div id="prefsView">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);margin-bottom:4px;">Target Role</div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark);" id="pvRole">
+              {% if user_prefs.role %}{{ user_prefs.role }}{% else %}<span style="color:var(--fg3);font-weight:400;">Not set</span>{% endif %}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);margin-bottom:4px;">Experience</div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark);" id="pvExp">
+              {% if user_prefs.experience_level %}{{ user_prefs.experience_level }}{% else %}<span style="color:var(--fg3);font-weight:400;">Not set</span>{% endif %}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);margin-bottom:4px;">Preferred Location</div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark);" id="pvLoc">
+              {% if user_prefs.preferred_location %}{{ user_prefs.preferred_location }}{% else %}<span style="color:var(--fg3);font-weight:400;">Any / Remote</span>{% endif %}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);margin-bottom:4px;">Work Type</div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark);" id="pvWork">
+              {% if user_prefs.work_type %}{{ user_prefs.work_type }}{% else %}<span style="color:var(--fg3);font-weight:400;">Not set</span>{% endif %}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);margin-bottom:4px;">Employment Type</div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark);" id="pvEmp">
+              {% if user_prefs.employment_type %}{{ user_prefs.employment_type }}{% else %}<span style="color:var(--fg3);font-weight:400;">Not set</span>{% endif %}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);margin-bottom:4px;">Salary Range (₹/yr)</div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark);" id="pvSalary">
+              {% if user_prefs.salary_min or user_prefs.salary_max %}
+                ₹{{ '{:,.0f}'.format(user_prefs.salary_min|int) if user_prefs.salary_min else '—' }}
+                – ₹{{ '{:,.0f}'.format(user_prefs.salary_max|int) if user_prefs.salary_max else '—' }}
+              {% else %}
+                <span style="color:var(--fg3);font-weight:400;">Not set</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit form (hidden by default) -->
+      <div id="prefsForm" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px;">
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--fg2);display:block;margin-bottom:5px;">Target Role</label>
+            <input type="text" id="pfRole" value="{{ user_prefs.role }}" placeholder="e.g. Software Engineer"
+              style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:'Geist',sans-serif;font-size:12.5px;color:var(--fg);background:var(--surface);outline:none;">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--fg2);display:block;margin-bottom:5px;">Experience Level</label>
+            <select id="pfExp" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:'Geist',sans-serif;font-size:12.5px;color:var(--fg);background:var(--surface);outline:none;">
+              <option value="">Select…</option>
+              {% for lvl in ['Entry Level','Junior','Mid-Level','Senior','Lead','Manager','Director'] %}
+              <option value="{{ lvl }}" {{ 'selected' if user_prefs.experience_level == lvl else '' }}>{{ lvl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--fg2);display:block;margin-bottom:5px;">Preferred Location</label>
+            <input type="text" id="pfLoc" value="{{ user_prefs.preferred_location }}" placeholder="e.g. Bangalore, Remote"
+              style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:'Geist',sans-serif;font-size:12.5px;color:var(--fg);background:var(--surface);outline:none;">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--fg2);display:block;margin-bottom:5px;">Work Type</label>
+            <select id="pfWork" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:'Geist',sans-serif;font-size:12.5px;color:var(--fg);background:var(--surface);outline:none;">
+              <option value="">Select…</option>
+              {% for wt in ['Remote','Hybrid','On-site'] %}
+              <option value="{{ wt }}" {{ 'selected' if user_prefs.work_type == wt else '' }}>{{ wt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--fg2);display:block;margin-bottom:5px;">Employment Type</label>
+            <select id="pfEmp" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:'Geist',sans-serif;font-size:12.5px;color:var(--fg);background:var(--surface);outline:none;">
+              <option value="">Select…</option>
+              {% for et in ['Full-time','Part-time','Contract','Freelance','Internship'] %}
+              <option value="{{ et }}" {{ 'selected' if user_prefs.employment_type == et else '' }}>{{ et }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--fg2);display:block;margin-bottom:5px;">Salary Range (₹/yr)</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="number" id="pfSalMin" placeholder="Min" value="{{ user_prefs.salary_min }}"
+                style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:'Geist',sans-serif;font-size:12.5px;color:var(--fg);background:var(--surface);outline:none;">
+              <span style="color:var(--fg3);font-size:13px;">–</span>
+              <input type="number" id="pfSalMax" placeholder="Max" value="{{ user_prefs.salary_max }}"
+                style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:'Geist',sans-serif;font-size:12.5px;color:var(--fg);background:var(--surface);outline:none;">
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button onclick="togglePrefsEdit()"
+            style="padding:8px 16px;border-radius:8px;border:1px solid var(--line);background:var(--bg);font-family:'Geist',sans-serif;font-size:12.5px;font-weight:600;color:var(--fg2);cursor:pointer;">
+            Cancel
+          </button>
+          <button onclick="savePrefs()" id="prefsSaveBtn"
+            style="padding:8px 18px;border-radius:8px;border:none;background:var(--dark);font-family:'Geist',sans-serif;font-size:12.5px;font-weight:600;color:#fff;cursor:pointer;transition:background .15s;">
+            Save Preferences
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Resume status banner -->
     <div class="resume-status">
       {% if current_user.resume_text and current_user.resume_text | trim %}
@@ -605,30 +730,6 @@
       </div>
     </div>
     {% endif %}
-
-    <!-- Skills extracted from resume -->
-    <div class="pcard" style="animation-delay:.08s;">
-      <div class="card-section-title">Skills &amp; Technologies</div>
-      {% if current_user.resume_text and current_user.resume_text | trim %}
-        {%- set parsed = current_user.parsed_resume if current_user.parsed_resume is defined else none -%}
-        {%- set skills_list = parsed.skills if parsed and parsed.skills is defined else [] -%}
-        {% if skills_list %}
-          <div class="skills-grid">
-            {% for skill in skills_list %}
-              <span class="skill-chip {% if loop.index <= 5 %}primary{% endif %}">{{ skill }}</span>
-            {% endfor %}
-          </div>
-        {% else %}
-          <!-- Fallback: parse skills from resume text on the fly -->
-          <div class="skills-empty">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--fg3)" stroke-width="1.6" stroke-linecap="round" style="margin:0 auto 8px;display:block;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Skills not yet extracted. Re-upload your resume to analyse skills.
-          </div>
-        {% endif %}
-      {% else %}
-        <div class="skills-empty">Upload your resume to see extracted skills here.</div>
-      {% endif %}
-    </div>
 
     <!-- Parsed resume sections (Summary / Experience / Education) -->
     {% if current_user.resume_text and current_user.resume_text | trim %}
@@ -748,6 +849,63 @@
     }
   } catch {}
 })();
+
+// ── Job Preferences toggle ──
+function togglePrefsEdit() {
+  const form = document.getElementById('prefsForm');
+  const view = document.getElementById('prefsView');
+  const btn  = document.getElementById('prefsEditBtn');
+  const isOpen = form.style.display !== 'none';
+  form.style.display = isOpen ? 'none' : 'block';
+  btn.innerHTML = isOpen
+    ? `<svg viewBox="0 0 12 12" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;"><path d="M9 1l2 2-7 7H2V8z"/></svg> Edit`
+    : `<svg viewBox="0 0 12 12" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg> Cancel`;
+}
+
+async function savePrefs() {
+  const btn = document.getElementById('prefsSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const payload = {
+    role:               document.getElementById('pfRole').value.trim(),
+    experience_level:   document.getElementById('pfExp').value,
+    preferred_location: document.getElementById('pfLoc').value.trim(),
+    work_type:          document.getElementById('pfWork').value,
+    employment_type:    document.getElementById('pfEmp').value,
+    salary_min:         document.getElementById('pfSalMin').value,
+    salary_max:         document.getElementById('pfSalMax').value,
+  };
+
+  try {
+    const res  = await fetch('/jobs/update-prefs', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const fmt = n => n ? '₹' + Number(n).toLocaleString('en-IN') : '—';
+      const dimSpan = t => `<span style="color:var(--fg3);font-weight:400;">${t}</span>`;
+      document.getElementById('pvRole').innerHTML    = payload.role             || dimSpan('Not set');
+      document.getElementById('pvExp').innerHTML     = payload.experience_level || dimSpan('Not set');
+      document.getElementById('pvLoc').innerHTML     = payload.preferred_location || dimSpan('Any / Remote');
+      document.getElementById('pvWork').innerHTML    = payload.work_type        || dimSpan('Not set');
+      document.getElementById('pvEmp').innerHTML     = payload.employment_type  || dimSpan('Not set');
+      const salMin = payload.salary_min, salMax = payload.salary_max;
+      document.getElementById('pvSalary').innerHTML =
+        (salMin || salMax) ? `${fmt(salMin)} – ${fmt(salMax)}` : dimSpan('Not set');
+      togglePrefsEdit();
+    } else {
+      alert('Could not save: ' + (data.error || 'unknown error'));
+    }
+  } catch (e) {
+    alert('Network error. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Preferences';
+  }
+}
 </script>
 
 {% endblock %}

@@ -28,31 +28,54 @@ def truncate_resume(text: str, max_chars: int = 5000) -> str:
 # ── Role inference ────────────────────────────────────────────────────────────
 # Maps keywords found in resume → clean role string for Adzuna query
 ROLE_KEYWORD_MAP = [
-    (["machine learning", "deep learning", "pytorch", "tensorflow", "mlops"],   "Machine Learning Engineer"),
-    (["data scientist", "data science", "pandas", "numpy", "scikit"],           "Data Scientist"),
-    (["data analyst", "tableau", "power bi", "sql", "excel", "looker"],         "Data Analyst"),
-    (["devops", "kubernetes", "docker", "ci/cd", "terraform", "ansible"],       "DevOps Engineer"),
-    (["backend", "node.js", "django", "flask", "fastapi", "spring", "rails"],   "Backend Developer"),
-    (["frontend", "react", "vue", "angular", "next.js", "tailwind", "css"],     "Frontend Developer"),
-    (["full stack", "fullstack", "full-stack"],                                  "Full Stack Developer"),
-    (["android", "kotlin", "ios", "swift", "flutter", "react native"],          "Mobile Developer"),
-    (["security", "penetration", "cybersecurity", "soc", "siem"],               "Security Engineer"),
-    (["cloud", "aws", "gcp", "azure", "serverless"],                            "Cloud Engineer"),
-    (["product manager", "product management", "roadmap", "stakeholder"],       "Product Manager"),
-    (["ui/ux", "ux designer", "figma", "user research", "wireframe"],           "UX Designer"),
-    (["software engineer", "software developer", "sde", "swe"],                 "Software Engineer"),
+    (["machine learning", "deep learning", "pytorch", "tensorflow", "mlops", "model training", "model deployment"],
+     "Machine Learning Engineer"),
+    (["data scientist", "data science", "pandas", "numpy", "scikit", "statistical model", "feature engineering"],
+     "Data Scientist"),
+    (["data analyst", "tableau", "power bi", "looker", "business intelligence", "sql analyst"],
+     "Data Analyst"),
+    (["devops", "kubernetes", "ci/cd", "terraform", "ansible", "jenkins", "helm", "site reliability"],
+     "DevOps Engineer"),
+    (["backend", "node.js", "django", "flask", "fastapi", "spring", "rails", "rest api", "microservices", "server-side"],
+     "Backend Developer"),
+    (["frontend", "react", "vue", "angular", "next.js", "tailwind", "css", "html", "ui developer"],
+     "Frontend Developer"),
+    (["full stack", "fullstack", "full-stack"],
+     "Full Stack Developer"),
+    (["android", "kotlin", "ios", "swift", "flutter", "react native", "mobile app"],
+     "Mobile Developer"),
+    (["security", "penetration", "cybersecurity", "soc", "siem", "appsec", "infosec"],
+     "Security Engineer"),
+    (["cloud", "aws", "gcp", "azure", "serverless", "cloud infrastructure"],
+     "Cloud Engineer"),
+    (["product manager", "product management", "roadmap", "stakeholder", "product owner"],
+     "Product Manager"),
+    (["ui/ux", "ux designer", "figma", "user research", "wireframe", "interaction design"],
+     "UX Designer"),
+    (["software engineer", "software developer", "sde", "swe"],
+     "Software Engineer"),
 ]
 
 def infer_role_from_resume(text: str) -> str:
     """
-    Infer the most relevant job role from resume text using keyword matching.
-    Falls back to 'Software Engineer' if nothing matches.
+    Infer the most relevant job role from resume text using weighted keyword
+    scoring.  Every matching keyword adds 1 point to its candidate role; the
+    role with the highest score wins.  Falls back to 'Software Engineer' when
+    there is a tie or no match.
     """
     text_lower = text.lower()
+    scores: dict[str, int] = {}
     for keywords, role in ROLE_KEYWORD_MAP:
-        if any(kw in text_lower for kw in keywords):
-            return role
-    return "Software Engineer"
+        hit_count = sum(1 for kw in keywords if kw in text_lower)
+        if hit_count:
+            scores[role] = scores.get(role, 0) + hit_count
+
+    if not scores:
+        return "Software Engineer"
+
+    # Return the highest-scoring role; on a tie keep the earlier (more specific) entry.
+    best_role = max(scores, key=lambda r: scores[r])
+    return best_role
 
 
 def parse_resume_sections(text: str) -> dict:

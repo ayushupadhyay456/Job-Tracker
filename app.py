@@ -17,6 +17,10 @@ from core.jobs_service import get_jobs_for_user
 from core.scorer import score_resume_against_job, score_resume_ats, analyze_job_fit
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
+from sqlalchemy.pool import NullPool
+
+# ─── Supabase ────────────────────────────────────────────────────────────────
+from supabase import create_client, Client as SupabaseClient
 
 pymysql.install_as_MySQLdb()
 
@@ -28,8 +32,59 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY']                     = os.getenv("FLASK_SECRET", "dev-key-2026")
 app.config['MAX_CONTENT_LENGTH']             = 5 * 1024 * 1024   # 5 MB
 
+
+
+
+# Serverless (Vercel) connection configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "poolclass": NullPool,          # Fresh connection per request, no stale sockets
+    "connect_args": {
+        "connect_timeout": 10,
+        "read_timeout": 30,
+        "write_timeout": 30,
+    }
+}
+
+# If you initialize db here:
+# db.init_app(app)
+
+
 db.init_app(app)
 migrate = Migrate(app, db)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SUPABASE CLIENT SINGLETON
+# Initialised once at startup from SUPABASE_URL + SUPABASE_KEY env vars.
+# Use get_supabase() anywhere in the app to access the client.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_supabase_client: SupabaseClient | None = None
+
+_SUPABASE_URL = os.getenv("SUPABASE_URL")
+_SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+if _SUPABASE_URL and _SUPABASE_KEY:
+    try:
+        _supabase_client = create_client(_SUPABASE_URL, _SUPABASE_KEY)
+        print("✅  Supabase client initialised.")
+    except Exception as _e:
+        print(f"⚠️  Supabase init failed: {_e}")
+else:
+    print("⚠️  SUPABASE_URL / SUPABASE_KEY not set — Supabase disabled.")
+
+
+def get_supabase() -> SupabaseClient:
+    """Return the Supabase client, or raise if not configured."""
+    if _supabase_client is None:
+        raise RuntimeError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_KEY.")
+    return _supabase_client
+
+
+# Storage bucket used for profile pictures (create this bucket in your Supabase dashboard)
+SUPABASE_PFP_BUCKET = "profile-pictures"
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -290,11 +345,35 @@ def upload_pfp():
         flash('Please upload a valid image (PNG, JPG, GIF, WEBP).', 'error')
         return redirect(request.referrer or url_for('jobs'))
 
-    upload_dir = '/tmp/uploads' if os.getenv('VERCEL') else 'static/uploads'
-    os.makedirs(upload_dir, exist_ok=True)
-    filename = secure_filename(f"pfp_{current_user.id}.{ext}")
-    file.save(os.path.join(upload_dir, filename))
-    current_user.profile_pic = f'/static/uploads/{filename}'
+    filename    = secure_filename(f"pfp_{current_user.id}.{ext}")
+    file_bytes  = file.read()
+    mime_type   = f"image/{ext if ext != 'jpg' else 'jpeg'}"
+
+    if _supabase_client:
+        # ── Upload to Supabase Storage ────────────────────────────────────────
+        try:
+            supabase = get_supabase()
+            # upsert=True overwrites any existing file for this user
+            supabase.storage.from_(SUPABASE_PFP_BUCKET).upload(
+                path=filename,
+                file=file_bytes,
+                file_options={"content-type": mime_type, "upsert": "true"},
+            )
+            public_url = supabase.storage.from_(SUPABASE_PFP_BUCKET).get_public_url(filename)
+            current_user.profile_pic = public_url
+        except Exception as e:
+            app.logger.error(f"Supabase upload error: {e}")
+            flash('Profile picture upload failed. Please try again.', 'error')
+            return redirect(request.referrer or url_for('jobs'))
+    else:
+        # ── Fallback: local disk (dev only) ───────────────────────────────────
+        upload_dir = '/tmp/uploads' if os.getenv('VERCEL') else 'static/uploads'
+        os.makedirs(upload_dir, exist_ok=True)
+        save_path = os.path.join(upload_dir, filename)
+        with open(save_path, 'wb') as f:
+            f.write(file_bytes)
+        current_user.profile_pic = f'/static/uploads/{filename}'
+
     db.session.commit()
     return redirect(request.referrer or url_for('jobs'))
 

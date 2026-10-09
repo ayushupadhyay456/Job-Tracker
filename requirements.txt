@@ -34,3 +34,4 @@ pyyaml
 
 
 razorpay
+supabase>=2.0.0

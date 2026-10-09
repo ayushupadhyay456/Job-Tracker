@@ -7,10 +7,11 @@ PyMySQL is used as the driver (pure Python, no C deps).
 
 import os
 import re
+from datetime import datetime, UTC
 import pymysql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, UTC
+from sqlalchemy.pool import NullPool
 from flask_sqlalchemy import SQLAlchemy
 
 # Required for SQLAlchemy to use PyMySQL as the MySQL driver
@@ -24,7 +25,17 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set. Add it to your .env file.")
 
-engine       = create_engine(DATABASE_URL, pool_pre_ping=True)
+# Engine configuration for standalone scripts (monitor.py, schedulers, etc.)
+engine = create_engine(
+    DATABASE_URL,
+    poolclass=NullPool,
+    connect_args={
+        "connect_timeout": 10,
+        "read_timeout": 30,
+        "write_timeout": 30,
+    },
+)
+
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
@@ -32,8 +43,7 @@ class Database:
     """High-level helper used by monitor.py and the Gmail dashboard."""
 
     def __init__(self):
-        from core.models import JobApplication
-        JobApplication.metadata.create_all(bind=engine)
+        pass
 
     def _session(self):
         return SessionLocal()
@@ -68,23 +78,23 @@ class Database:
                 return
 
             record = JobApplication(
-                message_id       = email.get('id'),
-                thread_id        = email.get('threadId'),
-                subject          = email.get('subject', ''),
-                email            = email.get('sender', ''),
-                body             = email.get('body', ''),
-                company          = _extract_company(email.get('sender', '')),
-                is_recruiter     = analysis.get('is_recruiter', False),
-                ai_summary       = analysis.get('summary', ''),
-                confidence_score = analysis.get('confidence_score', 0),
-                status           = 'New',
-                last_activity    = datetime.now(UTC),
+                message_id=email.get('id'),
+                thread_id=email.get('threadId'),
+                subject=email.get('subject', ''),
+                email=email.get('sender', ''),
+                body=email.get('body', ''),
+                company=_extract_company(email.get('sender', '')),
+                is_recruiter=analysis.get('is_recruiter', False),
+                ai_summary=analysis.get('summary', ''),
+                confidence_score=analysis.get('confidence_score', 0),
+                status='New',
+                last_activity=datetime.now(UTC),
             )
             session.add(record)
             session.commit()
-        except Exception as e:
+        except Exception:
             session.rollback()
-            raise e
+            raise
         finally:
             session.close()
 

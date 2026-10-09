@@ -39,12 +39,22 @@ app.config['MAX_CONTENT_LENGTH']             = 5 * 1024 * 1024   # 5 MB
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+#     "poolclass": NullPool,          # Fresh connection per request, no stale sockets
+#     "connect_args": {
+#         "connect_timeout": 10,
+#         "read_timeout": 30,
+#         "write_timeout": 30,
+#     }
+# }
+
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "poolclass": NullPool,          # Fresh connection per request, no stale sockets
+    "pool_pre_ping": True,
+    "pool_recycle": 280,
     "connect_args": {
-        "connect_timeout": 10,
-        "read_timeout": 30,
-        "write_timeout": 30,
+        "connect_timeout": 30,
+        "read_timeout": 120,
+        "write_timeout": 120,
     }
 }
 

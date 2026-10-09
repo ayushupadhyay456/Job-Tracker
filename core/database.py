@@ -28,11 +28,12 @@ if not DATABASE_URL:
 # Engine configuration for standalone scripts (monitor.py, schedulers, etc.)
 engine = create_engine(
     DATABASE_URL,
-    poolclass=NullPool,
+    pool_pre_ping=True,
+    pool_recycle=280,
     connect_args={
-        "connect_timeout": 10,
-        "read_timeout": 30,
-        "write_timeout": 30,
+        "connect_timeout": 30,
+        "read_timeout": 120,
+        "write_timeout": 120,
     },
 )
 

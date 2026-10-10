@@ -48,14 +48,16 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 #     }
 # }
 
+import certifi  # put this with your imports at the top, near line 20
+
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_pre_ping": True,
-    "pool_recycle": 280,
+    "poolclass": NullPool,
     "connect_args": {
-        "connect_timeout": 30,
-        "read_timeout": 120,
-        "write_timeout": 120,
-    }
+        "connect_timeout": 10,
+        "read_timeout": 20,
+        "write_timeout": 20,
+        "ssl": {"ca": certifi.where()},
+    },
 }
 
 # If you initialize db here:
@@ -489,8 +491,7 @@ def api_signup():
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Signup Error: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
-
+        return jsonify({"success": False, "error": "Something went wrong. Please try again."}), 500
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

@@ -493,6 +493,17 @@ def api_signup():
         app.logger.error(f"Signup Error: {e}")
         return jsonify({"success": False, "error": "Something went wrong. Please try again."}), 500
 
+@app.route("/dbcheck")
+def dbcheck():
+    from sqlalchemy import text
+    try:
+        version = db.session.execute(text("SELECT VERSION()")).scalar()
+        cipher = db.session.execute(text("SHOW STATUS LIKE 'Ssl_cipher'")).first()
+        return {"ok": True, "version": version, "ssl_cipher": cipher[1] if cipher else None}
+    except Exception as e:
+        app.logger.error(f"dbcheck: {type(e).__name__}: {e}")
+        return {"ok": False, "error": type(e).__name__}, 500
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
